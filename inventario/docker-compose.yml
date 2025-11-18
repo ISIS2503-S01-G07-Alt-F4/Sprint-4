@@ -1,8 +1,8 @@
 services:
 
-  mongodb:
+  mongodb_inventario:
     image: mongo:latest
-    container_name: mongodb
+    container_name: mongodb_inventario
     ports:
       - "27017:27017"
     volumes:
@@ -17,7 +17,7 @@ services:
       - ./:/app
     command: "fastapi dev main.py --host 0.0.0.0 --port 8000"
     depends_on:
-      - mongodb
+      - mongodb_inventario
 volumes:
   mongo-data:
 

@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://mongodb:27017/")
+client = MongoClient("mongodb://mongodb_inventario:27017/")
 db = client["inventario"]
 
 async def get_db():
