@@ -9,11 +9,19 @@ router = APIRouter(
 
 @router.get("/")
 async def listar_productos(db=Depends(get_db)) -> list[Producto]:
+    """
+    Lista todos los productos en la base de datos, excluyendo los items asociados.
+    """
     productos = db.productos.find({}, {"items": 0})
     return productos
 
 @router.post("/")
 async def crear_producto(producto: Producto, db=Depends(get_db)):
+    """
+    Crea un producto nuevo en la base de datos.
+    Se basa en el código de barras para verificar si el producto ya existe.
+    Ver el modelo ejemplo abajo
+    """
     if db.productos.find_one({"codigo_barras": producto.codigo_barras}):
         return {"message": "El producto con este código de barras ya existe", "codigo": "ERROR"}
     
@@ -22,21 +30,33 @@ async def crear_producto(producto: Producto, db=Depends(get_db)):
 
 @router.put("/{codigo_barras}")
 async def actualizar_producto(codigo_barras: str, producto: Producto, db=Depends(get_db)):
+    """
+    Actualiza un producto identificado por su código de barras.
+    """
     resultado = db.productos.update_one({"codigo_barras": codigo_barras}, {"$set": producto.model_dump()})
     return {"producto_actualizado": resultado, "codigo": "EXITO"}
 
 @router.delete("/{codigo_barras}")
 async def eliminar_producto(codigo_barras: str, db=Depends(get_db)):
+    """
+    Elimina un producto identificado por su código de barras.
+    """
     resultado = db.productos.delete_one({"codigo_barras": codigo_barras})
     return {"producto_eliminado": resultado, "codigo": "EXITO"}
 
 @router.get("/{codigo_barras}")
 async def obtener_producto(codigo_barras: str, db=Depends(get_db)):
+    """
+    Obtiene un producto identificado por su código de barras.
+    """
     producto = db.productos.find_one({"codigo_barras": codigo_barras})
     return producto
 
 @router.get("/{codigo_barras}/items")
 async def obtener_items_producto(codigo_barras: str, db=Depends(get_db)):
+    """
+    Obtiene todos los items asociados a un producto identificado por su código de barras.
+    """
     # Verificar si el producto existe
     producto = db.productos.find_one({"codigo_barras": codigo_barras})
     if not producto:
@@ -47,6 +67,17 @@ async def obtener_items_producto(codigo_barras: str, db=Depends(get_db)):
 
 @router.post("/{codigo_barras}/items")
 async def agregar_item_a_producto(codigo_barras: str, item: Item, db=Depends(get_db)):
+    """
+    Agrega un item a un producto existente identificado por su código de barras.
+    Si el item no existe en la base de datos, se crea uno nuevo.
+
+    Nota: El item puede tomar estados de:
+    - Disponible
+    - Vendido
+    - Devuelto
+    - Dañado
+    """
+
     # Verificar si el producto existe
     producto = db.productos.find_one({"codigo_barras": codigo_barras})
     if not producto:
@@ -71,7 +102,10 @@ async def obtener_item_de_producto(codigo_barras: str, item_sku: str, db=Depends
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
 
     # Buscar el item dentro del producto
-    item = next((itm for itm in producto.get("items", []) if itm["sku"] == item_sku), None)
+    for items in producto.get("items", []):
+        if items["sku"] == item_sku:
+            item = items
+            break
     if not item:
         return {"message": "Item no encontrado en el producto", "codigo": "ERROR"}
 
@@ -93,6 +127,9 @@ async def actualizar_item_de_producto(codigo_barras: str, item: Item, db=Depends
 
 @router.delete("/{codigo_barras}/items/{item_sku}")
 async def eliminar_item_de_producto(codigo_barras: str, item_sku: str, db=Depends(get_db)):
+    """
+    Elimina un item de un producto identificado por su código de barras y el SKU del item.
+    """
     # Verificar si el producto existe
     producto = db.productos.find_one({"codigo_barras": codigo_barras})
     if not producto:

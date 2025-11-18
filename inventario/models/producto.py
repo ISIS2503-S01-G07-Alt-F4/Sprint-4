@@ -8,9 +8,9 @@ class Producto(BaseModel):
     nombre: Annotated[str, StringConstraints(min_length=2, max_length=100)]
     descripcion: Annotated[str, StringConstraints(min_length=5, max_length=300)]
     precio: float
-    cantidad: Optional[int] = None
-    items_disponibles: Optional[list[Item]] = None # Items que estan disponibles en inventario
-    items: Optional[list[Item]] = None # Todos los items asociados/ han sido asociados al producto
+    cantidad_items_disponibles: Optional[int] = None
+    items_disponibles: list[Item] = [] # Items que estan disponibles en inventario
+    items: list[Item] = [] # Todos los items asociados/ han sido asociados al producto
 
     model_config = ConfigDict(
         json_schema_extra={
