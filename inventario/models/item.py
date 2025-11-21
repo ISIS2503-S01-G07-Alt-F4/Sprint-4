@@ -1,26 +1,36 @@
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-from typing import Annotated, Literal, Optional
-
+from typing import Optional, List, Literal
+from models.movimiento import MovimientoReciente
 class Item(BaseModel):
-    sku: Annotated[str, StringConstraints(min_length=3, max_length=20)]
+    sku: str = Field(alias="_id")
     ingreso_fecha: datetime
     salida_fecha: Optional[datetime] = None
-    estado: Annotated[str, Literal["disponible", "vendido", "devuelto", "dañado"]] = "disponible"
-    producto_id: str 
-    estanteria_id: str 
+    estado: Literal["disponible", "vendido", "devuelto", "dañado"]
+    atributos: Optional[dict] = None
+    producto_id: str
+    estanteria_id: str
     bodega_id: str
 
-    model_config = {
-        "json_schema_extra": {
+    movimientos_recientes: List[MovimientoReciente] = []
+
+    model_config = ConfigDict(populate_by_name=True,
+        json_schema_extra={
             "example": {
-                "sku": "ITEM123456",
+                "_id": "ITEM123456",
                 "ingreso_fecha": "2024-01-15T10:00:00Z",
-                "salida_fecha": None,
                 "estado": "disponible",
-                "producto_id": "PROD123456",
-                "estanteria_id": "EST123",
-                "bodega_id": "BOD123"
+                "producto_id": "PROD001",
+                "estanteria_id": "EST323",
+                "bodega_id": "BOD1",
+                "movimientos_recientes": [
+                    {
+                        "tipo": "ingreso",
+                        "fecha": "2024-01-15T10:00:00Z",
+                        "descripcion": "Ingreso a bodega",
+                        "usuario_id": "USR1"
+                    }
+                ]
             }
         }
-    }
+    )

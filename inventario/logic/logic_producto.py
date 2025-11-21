@@ -12,7 +12,7 @@ async def listar_productos(db=Depends(get_db)) -> list[Producto]:
     """
     Lista todos los productos en la base de datos, excluyendo los items asociados.
     """
-    productos = db.productos.find({}, {"items": 0})
+    productos = db.productos.find({}, {"atributos": 0})
     return productos
 
 @router.post("/")
@@ -22,10 +22,10 @@ async def crear_producto(producto: Producto, db=Depends(get_db)):
     Se basa en el código de barras para verificar si el producto ya existe.
     Ver el modelo ejemplo abajo
     """
-    if db.productos.find_one({"codigo_barras": producto.codigo_barras}):
+    if db.productos.find_one({"_id": producto.codigo_barras}):
         return {"message": "El producto con este código de barras ya existe", "codigo": "ERROR"}
     
-    resultado = db.productos.insert_one(producto.model_dump())
+    resultado = db.productos.insert_one(producto.model_dump(by_alias=True))
     return {"producto_creado": resultado.acknowledged, "codigo": "EXITO"}
 
 @router.put("/{codigo_barras}")
@@ -33,7 +33,9 @@ async def actualizar_producto(codigo_barras: str, producto: Producto, db=Depends
     """
     Actualiza un producto identificado por su código de barras.
     """
-    resultado = db.productos.update_one({"codigo_barras": codigo_barras}, {"$set": producto.model_dump()})
+    resultado = db.productos.update_one({"_id": codigo_barras}, {"$set": producto.model_dump()})
+    if resultado.matched_count == 0:
+        return {"message": "Producto no encontrado", "codigo": "ERROR"}
     return {"producto_actualizado": resultado, "codigo": "EXITO"}
 
 @router.delete("/{codigo_barras}")
@@ -41,7 +43,7 @@ async def eliminar_producto(codigo_barras: str, db=Depends(get_db)):
     """
     Elimina un producto identificado por su código de barras.
     """
-    resultado = db.productos.delete_one({"codigo_barras": codigo_barras})
+    resultado = db.productos.delete_one({"_id": codigo_barras})
     return {"producto_eliminado": resultado, "codigo": "EXITO"}
 
 @router.get("/{codigo_barras}")
@@ -49,7 +51,7 @@ async def obtener_producto(codigo_barras: str, db=Depends(get_db)):
     """
     Obtiene un producto identificado por su código de barras.
     """
-    producto = db.productos.find_one({"codigo_barras": codigo_barras})
+    producto = db.productos.find_one({"_id": codigo_barras})
     return producto
 
 @router.get("/{codigo_barras}/items")
@@ -58,41 +60,27 @@ async def obtener_items_producto(codigo_barras: str, db=Depends(get_db)):
     Obtiene todos los items asociados a un producto identificado por su código de barras.
     """
     # Verificar si el producto existe
-    producto = db.productos.find_one({"codigo_barras": codigo_barras})
+    producto = db.productos.find_one({"_id": codigo_barras})
     if not producto:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
 
-    items = producto.get("items", [])
+    items = db.items.find({"producto_id": codigo_barras})
+    items_disponibles = db.itemsDisponibles.find({"producto_id": codigo_barras})
+    items = list(items) + list(items_disponibles)
     return {"items": items, "codigo": "EXITO"}
 
-@router.post("/{codigo_barras}/items")
-async def agregar_item_a_producto(codigo_barras: str, item: Item, db=Depends(get_db)):
+@router.get("/{codigo_barras}/itemsDisponibles")
+async def obtener_items_disponibles_producto(codigo_barras: str, db=Depends(get_db)):
     """
-    Agrega un item a un producto existente identificado por su código de barras.
-    Si el item no existe en la base de datos, se crea uno nuevo.
-
-    Nota: El item puede tomar estados de:
-    - Disponible
-    - Vendido
-    - Devuelto
-    - Dañado
+    Obtiene todos los items disponibles asociados a un producto identificado por su código de barras.
     """
-
     # Verificar si el producto existe
-    producto = db.productos.find_one({"codigo_barras": codigo_barras})
+    producto = db.productos.find_one({"_id": codigo_barras})
     if not producto:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
-    # Si el item no existe, se crea
-    item = db.items.find_one({"sku": item.sku})
-    if not item:
-        item = db.items.insert_one(item.model_dump())
 
-    # Agregar el item al producto
-    db.productos.update_one(
-        {"codigo_barras": codigo_barras},
-        {"$push": {"items": item}}
-    )
-    return {"message": "Item agregado al producto", "codigo": "EXITO"}
+    items_disponibles = db.itemsDisponibles.find({"producto_id": codigo_barras})
+    return {"items_disponibles": list(items_disponibles), "codigo": "EXITO"}
 
 @router.get("/{codigo_barras}/items/{item_sku}")
 async def obtener_item_de_producto(codigo_barras: str, item_sku: str, db=Depends(get_db)):
@@ -110,34 +98,3 @@ async def obtener_item_de_producto(codigo_barras: str, item_sku: str, db=Depends
         return {"message": "Item no encontrado en el producto", "codigo": "ERROR"}
 
     return {"item": item, "codigo": "EXITO"}
-
-@router.put("/{codigo_barras}/items/{item_sku}")
-async def actualizar_item_de_producto(codigo_barras: str, item: Item, db=Depends(get_db)):
-    # Verificar si el producto existe
-    producto = db.productos.find_one({"codigo_barras": codigo_barras})
-    if not producto:
-        return {"message": "Producto no encontrado", "codigo": "ERROR"}
-
-    # Actualizar el item dentro del producto
-    resultado = db.productos.update_one(
-        {"codigo_barras": codigo_barras, "items.sku": item.sku},
-        {"$set": {f"items.$.{k}": v for k, v in item.model_dump().items()}}
-    )
-    return {"item_actualizado_en_producto": resultado, "codigo": "EXITO"}
-
-@router.delete("/{codigo_barras}/items/{item_sku}")
-async def eliminar_item_de_producto(codigo_barras: str, item_sku: str, db=Depends(get_db)):
-    """
-    Elimina un item de un producto identificado por su código de barras y el SKU del item.
-    """
-    # Verificar si el producto existe
-    producto = db.productos.find_one({"codigo_barras": codigo_barras})
-    if not producto:
-        return {"message": "Producto no encontrado", "codigo": "ERROR"}
-
-    # Eliminar el item del producto
-    resultado = db.productos.update_one(
-        {"codigo_barras": codigo_barras},
-        {"$pull": {"items": {"sku": item_sku}}}
-    )
-    return {"item_eliminado_del_producto": resultado, "codigo": "EXITO"}

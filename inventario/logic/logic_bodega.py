@@ -49,6 +49,17 @@ async def agregar_estanteria_bodega(bodega_id: str, estanteria: Estanteria, db=D
     )
     return {"estanteria_agregada": resultado.acknowledged, "codigo": "EXITO"}
 
+@router.get("/{bodega_id}/estanterias/{numero_estanteria}")
+async def obtener_estanteria_bodega(bodega_id: str, numero_estanteria: str, db=Depends(get_db)):
+    bodega = db.bodegas.find_one({"_id": bodega_id})
+    if not bodega:
+        return {"message": "Bodega no encontrada", "codigo": "ERROR"}
+    estanterias = bodega.get("estanterias", [])
+    for estanteria in estanterias:
+        if estanteria["numero_estanteria"] == numero_estanteria:
+            return {"estanteria": estanteria, "codigo": "EXITO"}
+    return {"message": "Estantería no encontrada", "codigo": "ERROR"}
+
 @router.delete("/{bodega_id}/estanterias/{numero_estanteria}")
 async def eliminar_estanteria_bodega(bodega_id: str, numero_estanteria: str, db=Depends(get_db)):
     resultado = db.bodegas.update_one(
