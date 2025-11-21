@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 from typing import Optional, List, Literal
 from models.movimiento import MovimientoReciente
+
 class Item(BaseModel):
     sku: str = Field(alias="_id")
     ingreso_fecha: datetime
@@ -23,14 +24,10 @@ class Item(BaseModel):
                 "producto_id": "PROD001",
                 "estanteria_id": "EST323",
                 "bodega_id": "BOD1",
-                "movimientos_recientes": [
-                    {
-                        "tipo": "ingreso",
-                        "fecha": "2024-01-15T10:00:00Z",
-                        "descripcion": "Ingreso a bodega",
-                        "usuario_id": "USR1"
-                    }
-                ]
+                "atributos": {
+                    "color": "rojo",
+                    "talla": "M"
+                }
             }
         }
     )

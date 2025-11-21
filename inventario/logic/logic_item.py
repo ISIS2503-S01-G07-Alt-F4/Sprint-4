@@ -56,7 +56,12 @@ async def actualizar_item(item_sku: str, item: Item, db=Depends(get_db)):
 @router.delete("/{item_sku}")
 async def eliminar_item(item_sku: str, db=Depends(get_db)):
 
-    item = db.items.find_one({"sku": item_sku})
-    resultado = db.items.delete_one({"sku": item_sku})
-    db.productos.update_one({"_id": item["producto_id"]}, {"$pull": {"items": {"sku": item_sku}}}) # Eliminar la referencia del item en el producto
+    item = db.items.find_one({"_id": item_sku})
+    resultado = db.items.delete_one({"_id": item_sku})
+    db.productos.update_one({"_id": item["producto_id"]}, {"$pull": {"items": {"_id": item_sku}}}) # Eliminar la referencia del item en el producto
     return {"item_eliminado": resultado}
+
+@router.get("/")
+async def listar_items(db=Depends(get_db)) -> list[Item]:
+    items = db.items.find()
+    return items
