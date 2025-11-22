@@ -5,7 +5,7 @@ from models.movimiento import MovimientoReciente
 
 class Item(BaseModel):
     sku: str = Field(alias="_id")
-    ingreso_fecha: datetime
+    ingreso_fecha: datetime = Field(default_factory=datetime.now)
     salida_fecha: Optional[datetime] = None
     estado: Literal["disponible", "vendido", "devuelto", "dañado"]
     atributos: Optional[dict] = None
