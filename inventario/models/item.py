@@ -8,7 +8,6 @@ class Item(BaseModel):
     ingreso_fecha: datetime = Field(default_factory=datetime.now)
     salida_fecha: Optional[datetime] = None
     estado: Literal["disponible", "vendido", "devuelto", "dañado"]
-    atributos: Optional[dict] = None
     producto_id: str
     estanteria_id: str
     bodega_id: str

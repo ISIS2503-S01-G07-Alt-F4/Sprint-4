@@ -39,20 +39,25 @@ async def crear_item(item: Item, db=Depends(get_db)) -> Dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La bodega asociada no existe")
     
     # Validar que la estantería existe dentro de la bodega
-    estanteria_existe = False
+    estanteria_encontrada = None
     for estanteria in bodega.get("estanterias", []):
         if estanteria["_id"] == item.estanteria_id:
-            estanteria_existe = True
-            break
+            estanteria_encontrada = estanteria
     
-    if not estanteria_existe:
+    if not estanteria_encontrada:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="La estantería asociada no existe")
     
     # Crear el item
     if item.estado == "disponible":
-        resultado = db.itemsDisponibles.insert_one(item.model_dump(by_alias=True))
         # Incrementar el contador de items disponibles en el producto
         db.productos.update_one({"_id": item.producto_id}, {"$inc": {"cantidad_items_disponibles": 1}})
+        if estanteria_encontrada["capacidad_utilizada"] >= estanteria_encontrada["capacidad_total"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La estantería está llena")
+        db.bodegas.update_one(
+            {"_id": item.bodega_id, "estanterias._id": item.estanteria_id},
+            {"$inc": {"estanterias.$.capacidad_utilizada": 1}}
+        )
+        resultado = db.itemsDisponibles.insert_one(item.model_dump(by_alias=True))
     else:
         resultado = db.items.insert_one(item.model_dump(by_alias=True))
     
