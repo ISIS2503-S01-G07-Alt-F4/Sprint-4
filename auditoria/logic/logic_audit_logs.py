@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_evento_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> dict:
+async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> dict:
     """
     Crea un nuevo log de auditoría.
     """
