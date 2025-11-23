@@ -1,0 +1,54 @@
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Puerto para apps
+      - "15672:15672" # Dashboard de RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - audit-net
+
+  mongodb_audit:
+    extends:
+      file: auditoria/docker-compose.yml
+      service: mongodb_audit
+
+  
+  audit:
+    extends:
+      file: auditoria/docker-compose.yml
+      service: audit
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin
+    depends_on:
+      - rabbitmq
+    networks:
+      - audit-net
+
+  producer:
+    build: ./test_producer
+    container_name: test_producer
+    ports:
+      - "8001:8001"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin
+    depends_on:
+      - rabbitmq
+    networks:
+      - audit-net
+
+volumes:
+  mongo-data: {}
+
+networks:
+  audit-net:
+    driver: bridge

@@ -7,9 +7,10 @@ router = APIRouter(
     prefix="/audited-services",
     tags=["Audited-services"],
 )
+db = get_db()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_servicio_auditado(service: Service, db=Depends(get_db)) -> Dict[str, Any]:
+async def crear_servicio_auditado(service: Service, db=db) -> Dict[str, Any]:
     """
     Crea un nuevo servicio auditado.
     """
