@@ -104,7 +104,10 @@ async def obtener_items_producto_bodega(codigo_barras: str, bodega_id: str, db=D
     producto = db.productos.find_one({"_id": codigo_barras})
     if not producto:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
-
+    bodega = db.bodegas.find_one({"_id": bodega_id})
+    if not bodega:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega no encontrada")
+    
     items = db.items.find({"producto_id": codigo_barras, "bodega_id": bodega_id})
     items_disponibles = db.itemsDisponibles.find({"producto_id": codigo_barras, "bodega_id": bodega_id})
     items = list(items) + list(items_disponibles)
@@ -137,7 +140,7 @@ async def obtener_items_estanteria_disponibles(bodega_id: str, numero_estanteria
     # Verificar si la estantería existe dentro de la bodega
     estanteria_existe = False
     for estanteria in bodega.get("estanterias", []):
-        if estanteria["numero_estanteria"] == numero_estanteria:
+        if estanteria["_id"] == numero_estanteria:
             estanteria_existe = True
             break
     
@@ -145,7 +148,7 @@ async def obtener_items_estanteria_disponibles(bodega_id: str, numero_estanteria
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estantería no encontrada")
     
     # Obtener los items disponibles en la estantería
-    items_disponibles = db.itemsDisponibles.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria})
+    items_disponibles = db.itemsDisponibles.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria}, {"estanteria_id":0, "bodega_id":0})
     return {"items_disponibles": list(items_disponibles), "codigo": "EXITO"}
 
 @router.get("/estanteria/todos", status_code=status.HTTP_200_OK)
@@ -161,7 +164,7 @@ async def obtener_items_estanteria_todos(bodega_id: str, numero_estanteria: str,
     # Verificar si la estantería existe dentro de la bodega
     estanteria_existe = False
     for estanteria in bodega.get("estanterias", []):
-        if estanteria["numero_estanteria"] == numero_estanteria:
+        if estanteria["_id"] == numero_estanteria:
             estanteria_existe = True
             break
     
@@ -169,7 +172,7 @@ async def obtener_items_estanteria_todos(bodega_id: str, numero_estanteria: str,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estantería no encontrada")
     
     # Obtener todos los items en la estantería
-    items = db.items.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria})
-    items_disponibles = db.itemsDisponibles.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria})
+    items = db.items.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria}, {"estanteria_id":0, "bodega_id":0})
+    items_disponibles = db.itemsDisponibles.find({"bodega_id": bodega_id, "estanteria_id": numero_estanteria}, {"estanteria_id":0, "bodega_id":0})
     items = list(items) + list(items_disponibles)
     return {"items": items, "codigo": "EXITO"}

@@ -13,9 +13,9 @@ services:
       - mongodb_inventario
 
   front-provesi:
-    extends:
-      file: front-provesi/docker-compose.yml
-      service: front-provesi
+    build: ./front-provesi
+    ports:
+      - "80:80"
     depends_on:
       - inventario
 
