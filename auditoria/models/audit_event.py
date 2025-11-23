@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field, StringConstraints, ConfigDict
-from typing import Annotated, Literal, Dict, Any
+from typing import Annotated, Literal, Dict, Any, Optional
 from datetime import datetime
 
 
 class AuditEvent(BaseModel):
-    timestamp: datetime = Field(default_factory=datetime.now())
+    timestamp: datetime = Field(default_factory=datetime.now()) 
     user_id: str
     audited_service_id: str
     action: Literal["CREATE", "READ", "UPDATE", "DELETE", "LOGIN", "LOGOUT"]
@@ -43,3 +43,7 @@ class AuditEvent(BaseModel):
             }
         }
     )
+    
+class AuditLog(AuditEvent):
+    id: Optional[str] = Field(default=None, alias="_id")  # Alias directo de _id
+    registered_at: datetime = Field(default_factory=datetime.now())

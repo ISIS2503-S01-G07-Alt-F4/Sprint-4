@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
-from models.audited_service import AuditedService
+from models.audited_service import AuditedService, Service
 from database.database import get_db, get_next_id
 
 router = APIRouter(
@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_servicio_auditado(audited_service: AuditedService, db=Depends(get_db)) -> Dict[str, Any]:
+async def crear_servicio_auditado(service: Service, db=Depends(get_db)) -> Dict[str, Any]:
     """
     Crea un nuevo servicio auditado.
     """
@@ -17,8 +17,8 @@ async def crear_servicio_auditado(audited_service: AuditedService, db=Depends(ge
     audited_service_dict = {
         "_id": audited_service_id,
         "id": audited_service_id,
-        "name": audited_service.name,
-        "recent_events": []
+        "name": service.name,
+        "recent_logs": []
     }
     res =  db.audited_services.insert_one(audited_service_dict)
     return {"log created": res.acknowledged, "codigo": "EXITO", "audited_service_id": res.inserted_id}
@@ -28,7 +28,7 @@ async def listar_servicios_auditados(db=Depends(get_db)) -> list[AuditedService]
     """
     Lista todos los servicios auditados.
     """
-    servicios = db.audited_services.find({}).to_list()
+    servicios = db.audited_services.find({}, {"recent_logs": 0}).to_list()
     return servicios
 
 @router.get("/{audited_service_id}", status_code=status.HTTP_200_OK) 
@@ -50,7 +50,7 @@ async def eliminar_servicio_auditado(audited_service_id: str, db=Depends(get_db)
     if resultado.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audited service not found")
     
-    #Eliminar eventos de auditoría asociados
+    #Eliminar logs de auditoría asociados
     db.audit_events.delete_many({"audited_service_id": audited_service_id})
     return None
 
@@ -61,7 +61,7 @@ async def actualizar_servicio_auditado(audited_service_id: str, audited_service:
     """
     resultado =  db.audited_services.update_one(
         {"_id": audited_service_id},
-        {"$set": audited_service.model_dump(exclude={"recent_events"})}
+        {"$set": audited_service.model_dump(exclude={"recent_logs"})}
     )
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audited service not found")
@@ -69,36 +69,25 @@ async def actualizar_servicio_auditado(audited_service_id: str, audited_service:
     return {"Audited service updated": resultado.acknowledged, "codigo": "EXITO"}
 
 @router.get("/{audited_service_id}/recent-events", status_code=status.HTTP_200_OK)
-async def obtener_eventos_recientes_servicio(audited_service_id: str, db=Depends(get_db)) -> list[Dict[str, Any]]:
+async def obtener_logs_recientes_servicio(audited_service_id: str, db=Depends(get_db)) -> list[Dict[str, Any]]:
     """
-    Obtiene los eventos recientes de un servicio auditado.
+    Obtiene los logs recientes de un servicio auditado.
     """
     audited_service =  db.audited_services.find_one({"_id": audited_service_id})
     if not audited_service:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audited service not found")
     
-    eventos = audited_service.get("recent_events", [])
-    return eventos
-
-@router.get("/all-recent-events", status_code=status.HTTP_200_OK)
-async def obtener_todos_eventos_recientes(db=Depends(get_db)) -> list[Dict[str, Any]]:
-    """
-    Obtiene los eventos recientes de todos los servicios auditados.
-    """
-    servicios = db.audited_services.find({}, {"recent_events": 1}).to_list()
-    eventos_recientes = []
-    for servicio in servicios:
-        eventos_recientes.extend(servicio.get("recent_events", []))
-    return eventos_recientes
+    logs = audited_service.get("recent_logs", [])
+    return logs
 
 @router.get("/{audited_service_id}/all-events", status_code=status.HTTP_200_OK)
-async def obtener_todos_eventos_servicio(audited_service_id: str, db=Depends(get_db)) -> list[Dict[str, Any]]:
+async def obtener_todos_logs_servicio(audited_service_id: str, db=Depends(get_db)) -> list[Dict[str, Any]]:
     """
-    Obtiene todos los eventos de un servicio auditado.
+    Obtiene todos los logs de un servicio auditado.
     """
     audited_service =  db.audited_services.find_one({"_id": audited_service_id})
     if not audited_service:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audited service not found")
     
-    eventos =  db.audit_events.find({"audit_service_id": audited_service_id}).to_list()
-    return eventos
+    logs =  db.audit_logs.find({"audited_service_id": audited_service_id}).sort("timestamp", -1).to_list()
+    return logs
