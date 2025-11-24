@@ -3,12 +3,13 @@ services:
   mongodb_audit:
     image: mongo:latest
     container_name: mongodb_audit
+    command: mongod --port 27018
     ports:
-      - "27018:27017"
+      - '27018:27018'
     volumes:
-      - mongo-data:/data/db
+      - mongo-data:/data/db/auditoria
     networks:
-    - audit-net
+      - audit-net
 
   audit:
     build: .
@@ -21,7 +22,7 @@ services:
     depends_on:
       - mongodb_audit
     networks:
-    - audit-net
+      - audit-net
 
 volumes:
   mongo-data: {}
