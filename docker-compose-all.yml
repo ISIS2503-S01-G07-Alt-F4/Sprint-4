@@ -1,4 +1,4 @@
-
+version: "3.8"
 services:
 
   rabbitmq:
@@ -19,7 +19,7 @@ services:
       service: mongodb_audit
 
   
-  inventario:
+  audit:
     extends:
       file: inventario/docker-compose.yml
       service: inventario
@@ -42,9 +42,7 @@ services:
       RABBITMQ_USER: admin
       RABBITMQ_PASS: admin
     depends_on:
-      - rabbitmq
-    networks:
-      - audit-net
+      - inventario
 
   mongodb_audit:
     extends:
