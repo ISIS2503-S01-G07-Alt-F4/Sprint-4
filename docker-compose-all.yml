@@ -1,5 +1,18 @@
 version: "3.8"
 services:
+
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Puerto para apps
+      - "15672:15672" # Dashboard de RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - audit-net
+  
   mongodb_inventario:
     extends:
       file: inventario/docker-compose.yml
@@ -9,6 +22,10 @@ services:
     extends:
       file: inventario/docker-compose.yml
       service: inventario
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin
     depends_on:
       - mongodb_inventario
 
@@ -19,5 +36,29 @@ services:
     depends_on:
       - inventario
 
+  mongodb_audit:
+    extends:
+      file: auditoria/docker-compose.yml
+      service: mongodb_audit
+
+  
+  audit:
+    extends:
+      file: auditoria/docker-compose.yml
+      service: audit
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: admin
+    depends_on:
+      - rabbitmq
+    networks:
+      - audit-net
+
 volumes:
   mongo-data: {}
+
+
+networks:
+  audit-net:
+    driver: bridge
