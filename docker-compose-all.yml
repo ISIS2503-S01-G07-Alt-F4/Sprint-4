@@ -1,3 +1,4 @@
+
 version: "3.8"
 services:
 
@@ -15,11 +16,10 @@ services:
   
   mongodb_inventario:
     extends:
-      file: auditoria/docker-compose.yml
-      service: mongodb_audit
+      file: inventario/docker-compose.yml
+      service: mongodb_inventario
 
-  
-  audit:
+  inventario:
     extends:
       file: inventario/docker-compose.yml
       service: inventario
@@ -28,19 +28,12 @@ services:
       RABBITMQ_USER: admin
       RABBITMQ_PASS: admin
     depends_on:
-      - rabbitmq
-    networks:
-      - audit-net
+      - mongodb_inventario
 
-  producer:
-    build: ./test_producer
-    container_name: test_producer
-    ports:
-      - "8001:8001"
-    environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: admin
-      RABBITMQ_PASS: admin
+  front-provesi:
+    extends:
+      file: front-provesi/docker-compose.yml
+      service: front-provesi
     depends_on:
       - inventario
 
