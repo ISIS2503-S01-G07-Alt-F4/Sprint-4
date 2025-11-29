@@ -1,18 +1,17 @@
-
 services:
 
   rabbitmq:
     image: rabbitmq:management-alpine
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # Puerto para apps
+      - "5672:5672" # Puerto para apps
       - "15672:15672" # Dashboard de RabbitMQ
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     networks:
       - audit-net
-  
+
   mongodb_inventario:
     extends:
       file: inventario/docker-compose.yml
@@ -41,7 +40,6 @@ services:
       file: auditoria/docker-compose.yml
       service: mongodb_audit
 
-  
   audit:
     extends:
       file: auditoria/docker-compose.yml
@@ -55,9 +53,40 @@ services:
     networks:
       - audit-net
 
+  pedidos:
+    extends:
+      file: pedidos/docker-compose.yml
+      service: pedidos
+    depends_on:
+      - rabbitmq
+      - inventario
+
+  postgres_pedidos:
+    extends:
+      file: pedidos/docker-compose.yml
+      service: postgres_pedidos
+
+  kong:
+    image: kong:3.0
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8005"
+      KONG_PROXY_LISTEN: "0.0.0.0:80"
+    ports:
+      - "80:80"
+      - "8005:8005"
+      - "8443:8443"
+    volumes:
+      - ./kong.yml:/kong.yml
+
 volumes:
   mongo-data: {}
-
+  postgres_pedidos_data: {}
 
 networks:
   audit-net:

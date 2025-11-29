@@ -8,6 +8,11 @@ app.include_router(producto)
 app.include_router(item)
 app.include_router(bodega)
 app.include_router(estanteria)
+
 @app.get("/")
 async def read_root():
     return {"message": "Bienvenido al Microservicio de Inventario :)"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "OK"}

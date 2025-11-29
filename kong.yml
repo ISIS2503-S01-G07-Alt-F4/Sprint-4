@@ -1,0 +1,36 @@
+_format_version: "2.1"
+
+services:
+  - name: pedidos_service
+    url: http://pedidos_upstream
+    routes:
+      - name: pedidos_route
+        paths:
+          - /pedidos
+        strip_path: true
+
+  - name: inventario_service
+    url: http://inventario_upstream
+    routes:
+      - name: inventario_route
+        paths:
+          - /inventario
+        strip_path: true
+
+upstreams:
+  - name: pedidos_upstream
+    targets:
+      - target: pedidos:8080
+        weight: 100
+    healthchecks:
+      threshold: 2
+      active:
+        type: http
+        http_path: /health/
+        timeout: 10
+        healthy:
+          interval: 10
+          successes: 4
+        unhealthy:
+          interval: 5
+          tcp_failures: 1

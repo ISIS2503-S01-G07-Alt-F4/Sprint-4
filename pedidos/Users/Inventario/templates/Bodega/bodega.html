@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {% if rol == "JefeBodega" or rol == "Operario" %}
+    Lista de Bodegas
+  {% else %}
+    Acceso Restringido
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if rol == "JefeBodega" or rol == "Operario" %}
+    <h2>Bodegas</h2>
+    <div class="container">
+      <div class="row">
+        {% for bodega in bodegas %}
+          <div class="col-md-5 mb-4">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">{{ bodega.ciudad }}</h5>
+                <p class="card-text">{{ bodega.direccion }}</p>
+                <a href="#" class="btn btn-success color">Ver inventario</a>
+                <a href="#" class="btn btn-primary color">Ver productos</a>
+                <a href="#" class="btn btn-secondary color">Agregar producto</a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    {% include 'acceso_denegado.html' with mensaje="Solo los Jefes de Bodega y Operarios pueden ver las bodegas." mostrar_boton_inicio=True %}
+  {% endif %}
+{% endblock %}
