@@ -3,10 +3,11 @@ services:
   mongodb_inventario:
     image: mongo:latest
     container_name: mongodb_inventario
+    command: mongod --port 27017
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongo-data:/data/db/inventario
 
   inventario:
     build: .
