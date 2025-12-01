@@ -36,11 +36,15 @@ services:
       - "3000:3000"
     depends_on:
       - inventario
+    networks:
+      - default
 
   mongodb_audit:
     extends:
       file: auditoria/docker-compose.yml
       service: mongodb_audit
+    networks:
+      - default
 
   audit:
     extends:
@@ -69,6 +73,8 @@ services:
     extends:
       file: pedidos/docker-compose.yml
       service: postgres_pedidos
+    networks:
+      - default
 
   kong:
     image: kong:3.0

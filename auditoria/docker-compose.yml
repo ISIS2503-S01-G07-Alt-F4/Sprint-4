@@ -8,8 +8,6 @@ services:
       - '27018:27018'
     volumes:
       - mongo-data:/data/db/auditoria
-    networks:
-      - audit-net
 
   audit:
     build: .
@@ -21,8 +19,6 @@ services:
     command: "fastapi dev main.py --host 0.0.0.0 --port 8000"
     depends_on:
       - mongodb_audit
-    networks:
-      - audit-net
 
 volumes:
   mongo-data: {}
