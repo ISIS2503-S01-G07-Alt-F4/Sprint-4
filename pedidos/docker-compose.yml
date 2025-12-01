@@ -39,7 +39,7 @@ services:
       - INTEGRITY_KEY=${INTEGRITY_KEY}
       - RECALCULAR_HASH=${RECALCULAR_HASH}
     env_file:
-      - .env
+      - ../.env
 
 volumes:
   postgres_pedidos_data:

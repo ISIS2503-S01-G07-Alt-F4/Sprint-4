@@ -14,7 +14,7 @@ async def listar_productos(db=Depends(get_db)) -> list[Producto]:
     """
     Lista todos los productos en la base de datos, excluyendo los items asociados.
     """
-    productos = db.productos.find({}, {"atributos": 0})
+    productos = db.productos.find({})
     resultado = []
     for producto in productos:
         resultado.append(Producto.model_validate(producto))
