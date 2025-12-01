@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from database.database import get_db
 from models.producto import Producto
-from models.item import Item    
+from models.item import Item
+from logic.logic_audit_producer import send_audit_event
+
 router = APIRouter(
     prefix="/productos",
     tags=["Producto"]
@@ -17,8 +19,9 @@ async def listar_productos(db=Depends(get_db)) -> list[Producto]:
     for producto in productos:
         resultado.append(Producto.model_validate(producto))
     return resultado
+
 @router.post("/")
-async def crear_producto(producto: Producto, db=Depends(get_db)):
+async def crear_producto(producto: Producto, request: Request, db=Depends(get_db)):
     """
     Crea un producto nuevo en la base de datos.
     Se basa en el código de barras para verificar si el producto ya existe.
@@ -28,26 +31,58 @@ async def crear_producto(producto: Producto, db=Depends(get_db)):
         return {"message": "El producto con este código de barras ya existe", "codigo": "ERROR"}
     
     resultado = db.productos.insert_one(producto.model_dump(by_alias=True))
+    
+    send_audit_event(
+        user_id="system",
+        action="CREATE",
+        description=f"Producto creado: {producto.nombre}",
+        entity="PRODUCTO",
+        entity_id=str(resultado.inserted_id),
+        metadata=producto.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"producto_creado": resultado.acknowledged, "codigo": "EXITO", "id_producto": resultado.inserted_id}
 
 @router.put("/{codigo_barras}")
-async def actualizar_producto(codigo_barras: str, producto: Producto, db=Depends(get_db)):
+async def actualizar_producto(codigo_barras: str, producto: Producto, request: Request, db=Depends(get_db)):
     """
     Actualiza un producto identificado por su código de barras.
     """
     resultado = db.productos.update_one({"_id": codigo_barras}, {"$set": producto.model_dump()})
     if resultado.matched_count == 0:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
+    
+    send_audit_event(
+        user_id="system",
+        action="UPDATE",
+        description=f"Producto actualizado: {producto.nombre}",
+        entity="PRODUCTO",
+        entity_id=codigo_barras,
+        metadata=producto.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"producto_actualizado": resultado.acknowledged, "codigo": "EXITO"}
 
 @router.delete("/{codigo_barras}")
-async def eliminar_producto(codigo_barras: str, db=Depends(get_db)):
+async def eliminar_producto(codigo_barras: str, request: Request, db=Depends(get_db)):
     """
     Elimina un producto identificado por su código de barras.
     """
     resultado = db.productos.delete_one({"_id": codigo_barras})
     if resultado.deleted_count == 0:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
+    
+    send_audit_event(
+        user_id="system",
+        action="DELETE",
+        description=f"Producto eliminado: {codigo_barras}",
+        entity="PRODUCTO",
+        entity_id=codigo_barras,
+        ip=request.client.host
+    )
+    
     return {"producto_eliminado": resultado.acknowledged, "codigo": "EXITO"}
 
 @router.get("/{codigo_barras}")

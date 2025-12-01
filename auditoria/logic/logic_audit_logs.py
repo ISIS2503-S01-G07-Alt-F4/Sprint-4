@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from models.audit_event import AuditEvent, AuditLog
 from database.database import get_db, get_next_id
 from datetime import datetime
@@ -16,11 +16,6 @@ async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> di
     audit_log_id = get_next_id("audit_log_id")
     audit_log_dict = audit_event.model_dump(by_alias=True)
     
-    #Verificar que el servicio auditado existe
-    audited_service =  db.audited_services.find_one({"_id": audit_event.audited_service_id})
-    if not audited_service:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audited service not found")
-    
     audit_log_registered_at = datetime.now()
     audit_log_dict["_id"] = audit_log_id
     audit_log_dict["registered_at"] = audit_log_registered_at
@@ -30,7 +25,11 @@ async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> di
     # Actualizar la lista de logs recientes en el servicio auditado
     db.audited_services.update_one(
         {"_id": audit_event.audited_service_id},
-        {"$push": {"recent_logs": {"$each": [audit_log_dict], "$slice": -10}}}
+        {
+            "$push": {"recent_logs": {"$each": [audit_log_dict], "$slice": -10}},
+            "$setOnInsert": {"name": audit_event.audited_service_id, "id": audit_event.audited_service_id}
+        },
+        upsert=True
     )
     
     return {"event created": res.acknowledged, "codigo": "EXITO", "audit_log_id": res.inserted_id}

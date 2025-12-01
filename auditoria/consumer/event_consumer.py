@@ -29,6 +29,6 @@ def start_consumer():
             
             print(" [*] Waiting for audit logs. To exit press CTRL+C")
             channel.start_consuming()
-        except pika.exceptions.AMQPConnectionError:
-            print("Connection to RabbitMQ failed, retrying in 5 seconds...")
+        except (pika.exceptions.AMQPConnectionError, Exception) as e:
+            print(f"Connection to RabbitMQ failed: {e}, retrying in 5 seconds...")
             time.sleep(5)

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from database.database import get_db
 from models.item import Item
 from typing import Dict, Any
+from logic.logic_audit_producer import send_audit_event
+
 router = APIRouter(
     prefix="/items",
     tags=["Item"]
@@ -20,7 +22,7 @@ async def obtener_item(item_sku: str, db=Depends(get_db)) -> Item:
     return Item.model_validate(item)
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_item(item: Item, db=Depends(get_db)) -> Dict[str, Any]:
+async def crear_item(item: Item, request: Request, db=Depends(get_db)) -> Dict[str, Any]:
     """
     Crea un item nuevo en la base de datos.
     Ver el modelo ejemplo abajo
@@ -61,19 +63,41 @@ async def crear_item(item: Item, db=Depends(get_db)) -> Dict[str, Any]:
     else:
         resultado = db.items.insert_one(item.model_dump(by_alias=True))
     
+    send_audit_event(
+        user_id="system",
+        action="CREATE",
+        description=f"Item creado: {item.sku}",
+        entity="ITEM",
+        entity_id=item.sku,
+        metadata=item.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"item_creado": resultado.acknowledged, "codigo": "EXITO", "id_item": str(resultado.inserted_id)}
 
 @router.put("/{item_sku}", status_code=status.HTTP_200_OK)
-async def actualizar_item(item_sku: str, item: Item, db=Depends(get_db)) -> Dict[str, Any]:
+async def actualizar_item(item_sku: str, item: Item, request: Request, db=Depends(get_db)) -> Dict[str, Any]:
     """
     Actualiza un item identificado por su SKU.
     """
     resultado = db.items.update_one({"_id": item_sku}, {"$set": item.model_dump(by_alias=True)})
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item no encontrado")
+    
+    send_audit_event(
+        user_id="system",
+        action="UPDATE",
+        description=f"Item actualizado: {item.sku}",
+        entity="ITEM",
+        entity_id=item.sku,
+        metadata=item.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"item_actualizado": resultado.acknowledged, "codigo": "EXITO"}
+
 @router.delete("/{item_sku}", status_code=status.HTTP_204_NO_CONTENT)
-async def eliminar_item(item_sku: str, db=Depends(get_db)):
+async def eliminar_item(item_sku: str, request: Request, db=Depends(get_db)):
     # Obtener el item antes de eliminarlo
     item = db.items.find_one({"_id": item_sku})
     
@@ -89,6 +113,16 @@ async def eliminar_item(item_sku: str, db=Depends(get_db)):
     else:
         # Eliminar de items
         db.items.delete_one({"_id": item_sku})
+    
+    send_audit_event(
+        user_id="system",
+        action="DELETE",
+        description=f"Item eliminado: {item_sku}",
+        entity="ITEM",
+        entity_id=item_sku,
+        ip=request.client.host
+    )
+
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def listar_items(db=Depends(get_db)) -> list[Item]:
