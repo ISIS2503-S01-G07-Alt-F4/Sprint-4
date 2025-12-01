@@ -22,11 +22,14 @@ services:
       file: inventario/docker-compose.yml
       service: inventario
     environment:
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_USER: admin
-      RABBITMQ_PASS: admin
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
     depends_on:
       - mongodb_inventario
+    networks:
+      - audit-net
+      - default
 
   front-provesi:
     extends:

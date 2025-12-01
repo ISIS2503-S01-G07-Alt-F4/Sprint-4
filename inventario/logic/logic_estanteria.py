@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from database.database import get_db
 from models.estanteria import Estanteria
 from typing import Dict, Any
+from logic.logic_audit_producer import send_audit_event
 
 router = APIRouter(
     prefix="/estanterias",
@@ -32,7 +33,7 @@ async def obtener_estanterias_bodega(bodega_id: str, db=Depends(get_db)) -> list
     return [Estanteria.model_validate(est) for est in estanterias]
 
 @router.post("/{bodega_id}", status_code=status.HTTP_201_CREATED)
-async def agregar_estanteria_bodega(bodega_id: str, estanteria: Estanteria, db=Depends(get_db)) -> Dict[str, Any]:
+async def agregar_estanteria_bodega(bodega_id: str, estanteria: Estanteria, request: Request, db=Depends(get_db)) -> Dict[str, Any]:
     """
     Agrega una estantería a una bodega específica.
     """
@@ -42,6 +43,17 @@ async def agregar_estanteria_bodega(bodega_id: str, estanteria: Estanteria, db=D
     )
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega no encontrada")
+    
+    send_audit_event(
+        user_id="system",
+        action="CREATE",
+        description=f"Estantería agregada a bodega {bodega_id}: {estanteria.numero_estanteria}",
+        entity="ESTANTERIA",
+        entity_id=estanteria.numero_estanteria,
+        metadata=estanteria.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"estanteria_agregada": resultado.acknowledged, "codigo": "EXITO"} 
 
 @router.get("/{bodega_id}/{numero_estanteria}", status_code=status.HTTP_200_OK)
@@ -56,7 +68,7 @@ async def obtener_estanteria_bodega(bodega_id: str, numero_estanteria: str, db=D
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estantería no encontrada")
 
 @router.put("/{bodega_id}/{numero_estanteria}", status_code=status.HTTP_200_OK)
-async def actualizar_estanteria_bodega(bodega_id: str, numero_estanteria: str, estanteria: Estanteria, db=Depends(get_db)) -> Dict[str, Any]:
+async def actualizar_estanteria_bodega(bodega_id: str, numero_estanteria: str, estanteria: Estanteria, request: Request, db=Depends(get_db)) -> Dict[str, Any]:
     if estanteria.numero_estanteria != numero_estanteria:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No es posible cambiar el número de estantería")
     
@@ -66,10 +78,21 @@ async def actualizar_estanteria_bodega(bodega_id: str, numero_estanteria: str, e
     )
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega o estantería no encontrada")
+    
+    send_audit_event(
+        user_id="system",
+        action="UPDATE",
+        description=f"Estantería actualizada en bodega {bodega_id}: {numero_estanteria}",
+        entity="ESTANTERIA",
+        entity_id=numero_estanteria,
+        metadata=estanteria.model_dump(),
+        ip=request.client.host
+    )
+    
     return {"estanteria_actualizada": resultado.acknowledged, "codigo": "EXITO"}
 
 @router.delete("/{bodega_id}/{numero_estanteria}", status_code=status.HTTP_204_NO_CONTENT)
-async def eliminar_estanteria_bodega(bodega_id: str, numero_estanteria: str, db=Depends(get_db)):
+async def eliminar_estanteria_bodega(bodega_id: str, numero_estanteria: str, request: Request, db=Depends(get_db)):
     resultado = db.bodegas.update_one(
         {"_id": bodega_id},
         {"$pull": {"estanterias": {"_id": numero_estanteria}}}
@@ -82,4 +105,14 @@ async def eliminar_estanteria_bodega(bodega_id: str, numero_estanteria: str, db=
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega no encontrada")
     if resultado.modified_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estantería no encontrada")
+    
+    send_audit_event(
+        user_id="system",
+        action="DELETE",
+        description=f"Estantería eliminada de bodega {bodega_id}: {numero_estanteria}",
+        entity="ESTANTERIA",
+        entity_id=numero_estanteria,
+        ip=request.client.host
+    )
+    
     return {"estanteria_eliminada": resultado.acknowledged, "codigo": "EXITO"}
