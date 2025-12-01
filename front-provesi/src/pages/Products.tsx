@@ -26,9 +26,15 @@ const Products: React.FC = () => {
     const loadProductos = async () => {
         try {
             const data = await getProductos();
-            setProductos(data);
+            if (Array.isArray(data)) {
+                setProductos(data);
+            } else {
+                console.error("Data received is not an array:", data);
+                setProductos([]);
+            }
         } catch (error) {
             console.error("Error loading products", error);
+            setProductos([]);
         } finally {
             setLoading(false);
         }

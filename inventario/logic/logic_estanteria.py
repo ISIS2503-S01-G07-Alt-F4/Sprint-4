@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from database.database import get_db
 from models.estanteria import Estanteria
 from typing import Dict, Any
-from logic.logic_audit_producer import send_audit_event
+from logic.logic_audit_producer import enviar_evento_auditoria
 
 router = APIRouter(
     prefix="/estanterias",
@@ -44,7 +44,7 @@ async def agregar_estanteria_bodega(bodega_id: str, estanteria: Estanteria, requ
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega no encontrada")
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="CREATE",
         description=f"Estantería agregada a bodega {bodega_id}: {estanteria.numero_estanteria}",
@@ -79,7 +79,7 @@ async def actualizar_estanteria_bodega(bodega_id: str, numero_estanteria: str, e
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega o estantería no encontrada")
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="UPDATE",
         description=f"Estantería actualizada en bodega {bodega_id}: {numero_estanteria}",
@@ -106,7 +106,7 @@ async def eliminar_estanteria_bodega(bodega_id: str, numero_estanteria: str, req
     if resultado.modified_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estantería no encontrada")
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="DELETE",
         description=f"Estantería eliminada de bodega {bodega_id}: {numero_estanteria}",

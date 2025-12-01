@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request
 from database.database import get_db
 from models.producto import Producto
 from models.item import Item
-from logic.logic_audit_producer import send_audit_event
+from logic.logic_audit_producer import enviar_evento_auditoria
 
 router = APIRouter(
     prefix="/productos",
@@ -32,7 +32,7 @@ async def crear_producto(producto: Producto, request: Request, db=Depends(get_db
     
     resultado = db.productos.insert_one(producto.model_dump(by_alias=True))
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="CREATE",
         description=f"Producto creado: {producto.nombre}",
@@ -53,7 +53,7 @@ async def actualizar_producto(codigo_barras: str, producto: Producto, request: R
     if resultado.matched_count == 0:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="UPDATE",
         description=f"Producto actualizado: {producto.nombre}",
@@ -74,7 +74,7 @@ async def eliminar_producto(codigo_barras: str, request: Request, db=Depends(get
     if resultado.deleted_count == 0:
         return {"message": "Producto no encontrado", "codigo": "ERROR"}
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="DELETE",
         description=f"Producto eliminado: {codigo_barras}",

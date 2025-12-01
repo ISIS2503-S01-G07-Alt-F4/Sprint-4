@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from database.database import get_db
 from models.item import Item
 from typing import Dict, Any
-from logic.logic_audit_producer import send_audit_event
+from logic.logic_audit_producer import enviar_evento_auditoria
 
 router = APIRouter(
     prefix="/items",
@@ -63,7 +63,7 @@ async def crear_item(item: Item, request: Request, db=Depends(get_db)) -> Dict[s
     else:
         resultado = db.items.insert_one(item.model_dump(by_alias=True))
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="CREATE",
         description=f"Item creado: {item.sku}",
@@ -84,7 +84,7 @@ async def actualizar_item(item_sku: str, item: Item, request: Request, db=Depend
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item no encontrado")
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="UPDATE",
         description=f"Item actualizado: {item.sku}",
@@ -114,7 +114,7 @@ async def eliminar_item(item_sku: str, request: Request, db=Depends(get_db)):
         # Eliminar de items
         db.items.delete_one({"_id": item_sku})
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="DELETE",
         description=f"Item eliminado: {item_sku}",
@@ -127,6 +127,8 @@ async def eliminar_item(item_sku: str, request: Request, db=Depends(get_db)):
 @router.get("/", status_code=status.HTTP_200_OK)
 async def listar_items(db=Depends(get_db)) -> list[Item]:
     items = db.items.find()
+    items_disponibles = db.itemsDisponibles.find()
+    items = list(items) + list(items_disponibles)
     return [Item.model_validate(item) for item in items]
 
 @router.get("/productoBodega", status_code=status.HTTP_200_OK)

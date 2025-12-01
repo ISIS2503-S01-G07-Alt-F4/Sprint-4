@@ -4,7 +4,7 @@ from database.database import get_db, get_next_id
 from models.item import Item
 from models.estanteria import Estanteria
 from models.bodega import Bodega
-from logic.logic_audit_producer import send_audit_event
+from logic.logic_audit_producer import enviar_evento_auditoria
 
 router = APIRouter(
     prefix="/bodegas",
@@ -17,10 +17,10 @@ async def crear_bodega(bodega: Bodega, request: Request, db=Depends(get_db)) -> 
     bodega_dict["_id"] = get_next_id("bodegas")
     resultado = db.bodegas.insert_one(bodega_dict)
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="CREATE",
-        description=f"Bodega creada: {bodega.nombre}",
+        description=f"Bodega creada: {resultado.inserted_id}",
         entity="BODEGA",
         entity_id=str(resultado.inserted_id),
         metadata=bodega.model_dump(),
@@ -52,7 +52,7 @@ async def eliminar_bodega(bodega_id: str, request: Request, db=Depends(get_db)):
     db.items.delete_many({"bodega_id": bodega_id})
     db.itemsDisponibles.delete_many({"bodega_id": bodega_id})
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="DELETE",
         description=f"Bodega eliminada: {bodega_id}",
@@ -68,7 +68,7 @@ async def actualizar_bodega(bodega_id: str, bodega: Bodega, request: Request, db
     if resultado.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bodega no encontrada")
     
-    send_audit_event(
+    enviar_evento_auditoria(
         user_id="system",
         action="UPDATE",
         description=f"Bodega actualizada: {bodega.nombre}",

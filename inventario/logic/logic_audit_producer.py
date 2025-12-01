@@ -8,7 +8,7 @@ RABBITMQ_USER = os.environ.get("RABBITMQ_USER", "admin")
 RABBITMQ_PASS = os.environ.get("RABBITMQ_PASS", "admin")
 QUEUE_NAME = "audit_queue"
 
-def send_audit_event(user_id: str, action: str, description: str, entity: str, entity_id: str, metadata: dict = None, ip: str = None):
+def enviar_evento_auditoria(user_id: str, action: str, description: str, entity: str, entity_id: str, metadata: dict = None, ip: str = None):
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))

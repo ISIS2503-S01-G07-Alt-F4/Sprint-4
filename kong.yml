@@ -34,3 +34,20 @@ upstreams:
         unhealthy:
           interval: 5
           tcp_failures: 1
+
+  - name: inventario_upstream
+    targets:
+      - target: inventario:8000
+        weight: 100
+    healthchecks:
+      threshold: 2
+      active:
+        type: http
+        http_path: /health
+        timeout: 10
+        healthy:
+          interval: 10
+          successes: 4
+        unhealthy:
+          interval: 5
+          tcp_failures: 1

@@ -34,7 +34,7 @@ services:
   front-provesi:
     build: ./front-provesi
     ports:
-      - "80:80"
+      - "3000:3000"
     depends_on:
       - inventario
 
