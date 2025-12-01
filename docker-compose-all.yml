@@ -103,5 +103,5 @@ volumes:
   postgres_pedidos_data: {}
 
 networks:
-  default:
+  red:
     driver: bridge
