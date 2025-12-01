@@ -10,14 +10,14 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     networks:
-      - default
+      - red
 
   mongodb_inventario:
     extends:
       file: inventario/docker-compose.yml
       service: mongodb_inventario
     networks:
-      - default
+      - red
 
   inventario:
     extends:
@@ -30,7 +30,7 @@ services:
     depends_on:
       - mongodb_inventario
     networks:
-      - default
+      - red
 
   front-provesi:
     build: ./front-provesi
@@ -39,14 +39,14 @@ services:
     depends_on:
       - inventario
     networks:
-      - default
+      - red
 
   mongodb_audit:
     extends:
       file: auditoria/docker-compose.yml
       service: mongodb_audit
     networks:
-      - default
+      - red
 
   audit:
     extends:
@@ -59,7 +59,7 @@ services:
     depends_on:
       - rabbitmq
     networks:
-      - default
+      - red
 
   pedidos:
     extends:
@@ -69,14 +69,14 @@ services:
       - rabbitmq
       - inventario
     networks:
-      - default
+      - red
 
   postgres_pedidos:
     extends:
       file: pedidos/docker-compose.yml
       service: postgres_pedidos
     networks:
-      - default
+      - red
 
   kong:
     image: kong:3.0
@@ -96,7 +96,7 @@ services:
     volumes:
       - ./kong.yml:/kong.yml
     networks:
-      - default
+      - red
 
 volumes:
   mongo-data: {}
