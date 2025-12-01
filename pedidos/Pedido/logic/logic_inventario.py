@@ -1,20 +1,31 @@
-from Pedido.models import Bodega, Estanteria, HistorialMovimiento, Item, Producto
+import requests
+from django.conf import settings
 
-def crear_bodega(data: dict) -> Bodega:
-    bodega = Bodega.objects.create(**data)
-    return bodega
+INVENTARIO_URL = getattr(settings, 'INVENTARIO_URL', 'http://inventario:8000')
 
 def get_bodegas():
-    queryset = Bodega.objects.all()
-    return (queryset)
+    try:
+        response = requests.get(f"{INVENTARIO_URL}/bodegas/")
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except requests.RequestException:
+        return []
 
-def crear_estanteria(data: dict) -> Estanteria:
-    estanteria = Estanteria.objects.create(**data)
-    return estanteria
+def get_item(sku):
+    try:
+        response = requests.get(f"{INVENTARIO_URL}/items/{sku}")
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.RequestException:
+        return None
 
-
-def registrar_item(data: dict) -> Item:
-    item = Item.objects.create(**data)
-    return item
-
-
+def get_bodega(bodega_id):
+    try:
+        response = requests.get(f"{INVENTARIO_URL}/bodegas/{bodega_id}")
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.RequestException:
+        return None

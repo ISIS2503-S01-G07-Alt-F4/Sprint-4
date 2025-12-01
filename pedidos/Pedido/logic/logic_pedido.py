@@ -1,6 +1,7 @@
 from Pedido.logic.logic_api import autenticar_usuario_api
+from Pedido.logic.logic_inventario import get_item, get_bodega
 from Pedido.logic.logic_factura import crear_factura_para_pedido
-from Pedido.models import Bodega, Item, Pedido
+from Pedido.models import Pedido
 from django.contrib.auth import authenticate
 from Pedido.serializers import PedidoCreateSerializer, PedidoSerializer
 from rest_framework import status
@@ -104,7 +105,6 @@ def validar_datos_pedido(request_data):
     Valida que todos los campos requeridos estén presentes
     """
    
-    
     bodega_seleccionada_id = request_data.get('bodega_seleccionada')
     items_ids = request_data.get('items', [])
     
@@ -140,11 +140,17 @@ def validar_datos_pedido(request_data):
         
         # 2. Obtener los productos de los items
         try:
-            items = Item.objects.filter(sku__in=items_ids).select_related('producto')
-            items_productos = {item.sku: item.producto.codigo_barras for item in items}
+            items_productos = {}
+            skus_no_encontrados = []
+            
+            for sku in items_ids:
+                item_data = get_item(sku)
+                if item_data:
+                    items_productos[sku] = item_data['producto_id']
+                else:
+                    skus_no_encontrados.append(sku)
             
             # 3. Verificar que todos los SKUs existen
-            skus_no_encontrados = set(items_ids) - set(items_productos.keys())
             if skus_no_encontrados:
                 return None, [f"Los siguientes SKUs no existen: {', '.join(skus_no_encontrados)}"]
             
@@ -172,22 +178,26 @@ def validar_datos_pedido(request_data):
     # Validar que los items estén en la bodega seleccionada
     if bodega_seleccionada_id and items_ids:
         try:
-            bodega = Bodega.objects.get(id=bodega_seleccionada_id)
+            bodega_data = get_bodega(bodega_seleccionada_id)
+            if not bodega_data:
+                 return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
             
             # Verificar cada item
             items_fuera_de_bodega = []
             for item_id in items_ids:
-                try:
-                    item = Item.objects.get(sku=item_id)
-                    # Un item está en una bodega si su producto.estanteria.bodega == bodega_seleccionada
-                    if item.producto.estanteria.bodega != bodega:
+                item_data = get_item(item_id)
+                if not item_data:
+                     return None, [f"Item con SKU {item_id} no existe"]
+                
+                if item_data.get('bodega_id') != bodega_seleccionada_id:
+                        actual_bodega = get_bodega(item_data.get('bodega_id'))
+                        actual_bodega_name = actual_bodega.get('ciudad', 'Desconocida') if actual_bodega else 'Desconocida'
+                        
                         items_fuera_de_bodega.append({
                             'item_id': item_id,
-                            'producto': item.producto.nombre,
-                            'bodega_actual': item.producto.estanteria.bodega.ciudad
+                            'producto': item_data.get('producto_id'),
+                            'bodega_actual': actual_bodega_name
                         })
-                except Item.DoesNotExist:
-                    return None, [f"Item con SKU {item_id} no existe"]
             
             if items_fuera_de_bodega:
                 error_msg = "Algunos items no pertenecen a la bodega seleccionada:"
@@ -195,8 +205,8 @@ def validar_datos_pedido(request_data):
                     error_msg += f"\n- Item {item_error['item_id']} ({item_error['producto']}) está en {item_error['bodega_actual']}"
                 return None, [error_msg]
                 
-        except Bodega.DoesNotExist:
-            return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
+        except Exception as e:
+            return None, [f"Error validando bodega: {str(e)}"]
     
     campos_requeridos = ['cliente', 'items','operario','productos_solicitados', 'bodega_seleccionada']  
     campos_faltantes = []

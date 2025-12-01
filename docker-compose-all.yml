@@ -10,7 +10,7 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
     networks:
-      - audit-net
+      - default
 
   mongodb_inventario:
     extends:
@@ -28,7 +28,6 @@ services:
     depends_on:
       - mongodb_inventario
     networks:
-      - audit-net
       - default
 
   front-provesi:
@@ -54,7 +53,7 @@ services:
     depends_on:
       - rabbitmq
     networks:
-      - audit-net
+      - default
 
   pedidos:
     extends:
@@ -63,6 +62,8 @@ services:
     depends_on:
       - rabbitmq
       - inventario
+    networks:
+      - default
 
   postgres_pedidos:
     extends:
@@ -86,11 +87,13 @@ services:
       - "8443:8443"
     volumes:
       - ./kong.yml:/kong.yml
+    networks:
+      - default
 
 volumes:
   mongo-data: {}
   postgres_pedidos_data: {}
 
 networks:
-  audit-net:
+  default:
     driver: bridge
