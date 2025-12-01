@@ -16,6 +16,8 @@ services:
     extends:
       file: inventario/docker-compose.yml
       service: mongodb_inventario
+    networks:
+      - default
 
   inventario:
     extends:
