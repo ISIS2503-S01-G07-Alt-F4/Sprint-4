@@ -8,6 +8,8 @@ services:
       - '27018:27018'
     volumes:
       - mongo-data:/data/db/auditoria
+    networks:
+      - red
 
   audit:
     build: .
@@ -19,6 +21,12 @@ services:
     command: "fastapi dev main.py --host 0.0.0.0 --port 8000"
     depends_on:
       - mongodb_audit
+    networks:
+      - red
 
 volumes:
   mongo-data: {}
+
+networks:
+  red:
+    driver: bridge
