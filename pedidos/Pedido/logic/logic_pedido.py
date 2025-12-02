@@ -1,13 +1,9 @@
-from Pedido.logic.logic_api import autenticar_usuario_api
 from Pedido.logic.logic_inventario import get_item, get_bodega
 from Pedido.logic.logic_factura import crear_factura_para_pedido
 from Pedido.models import Pedido
-from django.contrib.auth import authenticate
 from Pedido.serializers import PedidoCreateSerializer, PedidoSerializer
 from rest_framework import status
 from rest_framework.response import Response
-
-from Users.logic.logic_usuario import token_requerido
 
 
 def obtener_pedido(id : int):
@@ -23,18 +19,6 @@ def registrar_pedido(data: dict) -> Pedido:
     return pedido
 
 
-def verificar_permisos_pedido(usuario):
-    """
-    Verifica si el usuario tiene permisos para crear pedidos
-    """
-    # if not usuario.is_authenticated:
-    #     return False, "Usuario no autenticado"
-    
-    if usuario.rol not in ['JefeBodega']:
-        return False, "No tienes permisos para crear pedidos"
-    
-    return True, "OK"
-
 
 def procesar_creacion_pedido_completa(request):
     """
@@ -42,31 +26,17 @@ def procesar_creacion_pedido_completa(request):
     Coherente con el sistema de autenticación usado en las vistas web
     """
     try:
-        # 1. Autenticar usuario usando username/password en el body (como en las vistas web)
-        # username = request_data.get('username')
-        # password = request_data.get('password')
-        
-        # user, error_response = autenticar_usuario_api(username, password)
-        # if error_response:
-        #     return error_response
         request_data = request.data
-        user = request.user
         
-        # 2. Verificar permisos
-        tiene_permisos, mensaje = verificar_permisos_pedido(user)
-        if not tiene_permisos:
-            return Response({'error': mensaje,'codigo': 'INSUFFICIENT_PERMISSIONS'}, status=status.HTTP_403_FORBIDDEN)
-
-    
-        # 3. Validar datos del producto
+        #Validar datos del producto
         pedido_data, campos_faltantes = validar_datos_pedido(request_data)
         
         if campos_faltantes != []:
             return Response({'error': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}','codigo': 'MISSING_FIELDS','campos_faltantes': campos_faltantes}, status=status.HTTP_400_BAD_REQUEST)
         
         print("Llega hasta acá")
-        # 4. Crear pedido
-        success_response, error_response = crear_pedido_logica(user, pedido_data)
+        #Crear pedido
+        success_response, error_response = crear_pedido_logica(pedido_data)
         if error_response:
             return error_response
         return success_response
@@ -77,7 +47,7 @@ def procesar_creacion_pedido_completa(request):
     
 
 
-def crear_pedido_logica(usuario, pedido_data):
+def crear_pedido_logica(pedido_data):
     """
     Lógica principal para crear un producto usando los serializers
     """
@@ -257,15 +227,7 @@ def actualizar_estado_pedido_api(request):
     Endpoint para actualizar estado desde API
     """
     try:
-        # Autenticación
-        # username = request_data.get('username')
-        # password = request_data.get('password')
-        
-        # user, error_response = autenticar_usuario_api(username, password)
-        # if error_response:
-        #     return error_response
         request_data = request.data
-        user = request.user
         
         
         # Obtener datos
@@ -279,18 +241,8 @@ def actualizar_estado_pedido_api(request):
                 'error': 'pedido_id y nuevo_estado son requeridos',
                 'codigo': 'MISSING_FIELDS'
             }, status=status.HTTP_400_BAD_REQUEST)
-            pedido = Pedido.objects.get(id=pedido_id)
-            cliente_id = pedido.cliente.id
-
         
-        if nuevo_estado == "Empacado x despachar":
-            # Verificar permisos
-            if not permiso_actualizar_pedido_empacado_x_despachar(user):
-                return Response({
-                    'error': 'No tienes permisos para actualizar pedidos',
-                    'codigo': 'INSUFFICIENT_PERMISSIONS'
-                }, status=status.HTTP_403_FORBIDDEN)
-            
+        if nuevo_estado == "Empacado x despachar":            
             if not datos_factura:
                 return Response({
                     'error': 'Se requieren datos_factura cuando el nuevo estado es "Empacado x despachar"',
@@ -319,12 +271,7 @@ def actualizar_estado_pedido_api(request):
             pedido.factura = factura
             pedido.save()
 
-        # Verificar permisos
-        if not permiso_actualizar_pedido(user):
-            return Response({
-                'error': 'No tienes permisos para actualizar pedidos',
-                'codigo': 'INSUFFICIENT_PERMISSIONS'
-            }, status=status.HTTP_403_FORBIDDEN)
+
         
         # Actualizar
         pedido, error = actualizar_estado_pedido(pedido_id, nuevo_estado)
@@ -350,19 +297,6 @@ def actualizar_estado_pedido_api(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def permiso_actualizar_pedido(usuario):
-    """
-    Verifica si el usuario puede actualizar pedidos
-    """
-    roles_permitidos = [ 'JefeBodega','Operario','Vendedor']
-    return usuario.rol in roles_permitidos
-
-def permiso_actualizar_pedido_empacado_x_despachar(usuario):
-    """
-    Verifica si el usuario puede actualizar pedidos
-    """
-    roles_permitidos = [ 'Vendedor']
-    return usuario.rol in roles_permitidos
 
 def verificar_integridad_pedido(request_data):
     """
@@ -382,14 +316,8 @@ def verificar_integridad_pedido(request_data):
         print("entro al else")
         return False
     
-def consultar_pedido_por_id(request, id_pedido):
+def consultar_pedido_por_id(id_pedido):
     try:
-        user = request.user
-        if user.rol not in ['JefeBodega']:
-            return Response({
-                    'mensaje': 'No tienes los permisos suficientes para consultar pedidos.',
-                    'codigo': 'PERMISOS_VULNERADOS'
-                }, status=status.HTTP_409_CONFLICT)
         pedido = Pedido.objects.get(id=id_pedido)
 
         if pedido:

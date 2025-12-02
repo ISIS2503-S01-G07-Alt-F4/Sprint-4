@@ -1,7 +1,8 @@
 import requests
 from django.conf import settings
 
-INVENTARIO_URL = getattr(settings, 'INVENTARIO_URL', 'http://inventario:8000')
+# Usar Kong como API Gateway. `INVENTARIO_URL` ya está ensamblado en settings
+INVENTARIO_URL = getattr(settings, 'INVENTARIO_URL', 'http://kong:8000/inventario')
 
 def get_bodegas():
     try:

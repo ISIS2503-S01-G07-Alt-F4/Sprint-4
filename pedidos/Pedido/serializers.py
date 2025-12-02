@@ -1,4 +1,3 @@
-from Users.models import Operario
 from rest_framework import serializers
 from .models import Cliente, Item, Pedido, Producto, Estanteria, Bodega, ProductoSolicitado
 
@@ -90,10 +89,6 @@ class PedidoCreateSerializer(serializers.ModelSerializer):
         queryset=Item.objects.all()
     )
     productos_solicitados = ProductoSolicitadoSerializer(many=True, required=False)
-    operario = serializers.SlugRelatedField(
-        slug_field='login',  # ← Usar login en lugar de ID
-        queryset=Operario.objects.all()
-    )
     
     
     class Meta:

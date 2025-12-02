@@ -37,7 +37,7 @@ class Producto(models.Model):
         return f"{self.nombre} ({self.codigo_barras})"
  
 class HistorialMovimiento(models.Model):
-    operario_responsable = models.ForeignKey('Users.Operario', on_delete=models.DO_NOTHING)
+    operario_responsable = models.CharField(max_length=100, blank=True)
     fecha_movimiento = models.DateTimeField(auto_now_add=True)
     tipo_movimiento = models.CharField(max_length=50, choices=[('Ingreso', 'Ingreso'), ('Retiro', 'Retiro')])
        
@@ -93,8 +93,8 @@ class Pedido(models.Model):
     items = models.ManyToManyField('Item', related_name='pedidos')  
     factura = models.OneToOneField(Factura,on_delete=models.CASCADE,related_name="pedido",null=True,blank=True)
     cliente = models.ForeignKey('Cliente', on_delete=models.CASCADE, related_name='pedidos', null=True, blank=True)
-    operario = models.ForeignKey('Users.Operario', on_delete=models.DO_NOTHING, null=True, blank=True)
-    hash_de_integridad = models.CharField(max_length=64, editable=False, null=True, blank=True)
+    operario = models.CharField(max_length=100, blank=True)
+    hash_de_integridad = models.CharField(max_length=64, editable=False, blank=True)
 
     def _datos_para_hash(self):
         datos_factura = None
@@ -119,23 +119,14 @@ class Pedido(models.Model):
     def generar_hash(self):
         INTEGRITY_KEY = os.getenv("INTEGRITY_KEY")
         if not INTEGRITY_KEY:
-            raise Exception("Falta INTEGRITY_KEY en las variables de entorno")
+            raise RuntimeError("Falta INTEGRITY_KEY en las variables de entorno")
         print("___datos___")
         print(self._datos_para_hash())
         print("___________")
         return hmac.new(INTEGRITY_KEY.encode(), self._datos_para_hash(), hashlib.sha256).hexdigest()
 
     
-    # super().save(*args, **kwargs)
-    # if 'manage.py' in sys.argv:
-    #     return
-    # recalcular_hash = os.getenv("RECALCULAR_HASH")
-
-    # if recalcular_hash!=None:
-    #     print("recalculo")
-    #     print(recalcular_hash)
-    #     self.hash_de_integridad = self.generar_hash()
-    #     super().save(update_fields=['hash_de_integridad'])
+    # Siempre recalcula hash salvo en admin
     def save(self, *args, **kwargs):
         
         super().save(*args, **kwargs)
@@ -162,17 +153,3 @@ class ProductoSolicitado(models.Model):
     
     def __str__(self):
         return f"{self.cantidad} x {self.producto.nombre}"
-
-
-
-
-
-    
-
-# class Envio(models.Model):
-#     id_envio = models.AutoField(primary_key=True)  
-#     direccion = models.CharField(max_length=200)
-#     ciudad = models.CharField(max_length=100)
-#     #imagen = models.ImageField(upload_to="envios/", null=True, blank=True) Esto de momento lo comentamos porque no sabemos como funciona
-#     fecha_envio = models.DateField()
-

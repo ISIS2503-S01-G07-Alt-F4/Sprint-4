@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'Pedido',
-    'Users',
     'bootstrap5',
 ]
 
@@ -73,7 +72,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'Pedido.context_processors.operario_context',
             ],
         },
     },
@@ -169,8 +167,7 @@ CACHES = {
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
+        # Microservicio sin acoplar a Users: sólo JSON sin auth de Django
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
@@ -183,4 +180,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_USER_MODEL = 'Users.Usuario'
+# Configuración para comunicación vía API Gateway (Kong)
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://kong:8000')
+INVENTARIO_SERVICE_PATH = os.environ.get('INVENTARIO_SERVICE_PATH', '/inventario')
+INVENTARIO_URL = f"{API_GATEWAY_URL}{INVENTARIO_SERVICE_PATH}"

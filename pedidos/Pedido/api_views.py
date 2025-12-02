@@ -4,48 +4,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 
-from Users.logic.logic_usuario import token_requerido
-
-from .logic.logic_api import procesar_creacion_producto_completa
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny]) 
-@csrf_exempt
-def crear_producto_api(request):
-    """
-    Endpoint para crear un nuevo producto
-    
-    Parámetros requeridos en el body JSON:
-    - username: Usuario para autenticación
-    - password: Contraseña para autenticación
-    - codigo_barras: Código único del producto
-    - nombre: Nombre del producto
-    - tipo: Tipo de producto
-    - especificaciones: Especificaciones técnicas
-    - precio: Precio del producto
-    - estanteria: ID de la estantería donde se ubicará
-    - bodega_seleccionada (opcional): ID de la bodega para operarios
-    
-    Ejemplo de request:
-    {
-        "username": "operario1",
-        "password": "password123",
-        "codigo_barras": "1234567890123",
-        "nombre": "Chaqueta de Prueba",
-        "tipo": "Prueba",
-        "especificaciones": "Chaqueta de prueba, talla M, color rojo",
-        "precio": "1500000.00",
-        "estanteria": 1,
-        "bodega_seleccionada": 2 # Solo para operarios
-    }
-    """
-    return procesar_creacion_producto_completa(request.data)
-
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
-@token_requerido
 def crear_pedido_api(request):
     """
     Endpoint para crear un nuevo pedido
@@ -93,8 +54,7 @@ def crear_pedido_api(request):
 @csrf_exempt
 @api_view(['PUT'])
 @permission_classes([AllowAny]) 
-@token_requerido
-def cambiar_estado_pedido_api(request):
+def cambiar_estado_pedido_api(request, id):
     """
     Endpoint para crear un nuevo pedido
     
@@ -122,6 +82,9 @@ def cambiar_estado_pedido_api(request):
 
     }
     """
+    # Inyectar id de ruta si no viene en el body
+    if isinstance(request.data, dict) and 'pedido_id' not in request.data:
+        request.data['pedido_id'] = id
     return actualizar_estado_pedido_api(request)
 
 @api_view(['GET'])
@@ -129,12 +92,11 @@ def health_check(request):
     return Response({"status": "ok"}, status=200)
 
 @api_view(['GET'])
-def verificar_integridad(request):
-    return Response(verificar_integridad_pedido(request.data))
+def verificar_integridad(request, id):
+    # Adaptar función a tomar id por path param
+    return Response(verificar_integridad_pedido({'pedido_id': id}))
 
 
 @api_view(['GET'])
-@token_requerido
 def consultar_pedido(request, id):
-
-    return consultar_pedido_por_id(request, id)
+    return consultar_pedido_por_id(id)
