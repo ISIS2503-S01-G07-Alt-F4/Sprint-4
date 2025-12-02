@@ -9,8 +9,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_pedidos_data:/var/lib/postgresql/data
-    networks:
-      - red
 
   pedidos:
     build: .
@@ -42,12 +40,8 @@ services:
       - RECALCULAR_HASH=${RECALCULAR_HASH}
     env_file:
       - ../.env
-    networks:
-      - red
+
 volumes:
   postgres_pedidos_data:
 
 
-networks:
-  red:
-    driver: bridge

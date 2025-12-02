@@ -8,8 +8,6 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db/inventario
-    networks:
-      - red
 
   inventario:
     build: .
@@ -21,13 +19,8 @@ services:
     command: "fastapi dev main.py --host 0.0.0.0 --port 8000"
     depends_on:
       - mongodb_inventario
-    networks:
-      - red
 
 volumes:
   mongo-data:
 
 
-networks:
-  red:
-    driver: bridge
