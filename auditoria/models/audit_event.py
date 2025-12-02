@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, StringConstraints, ConfigDict
-from typing import Annotated, Literal, Dict, Any, Optional
+from typing import Annotated, Literal, Dict, Any, Optional, List
 from datetime import datetime
 
 
@@ -47,3 +47,9 @@ class AuditEvent(BaseModel):
 class AuditLog(AuditEvent):
     id: Optional[str] = Field(default=None, alias="_id")  # Alias directo de _id
     registered_at: datetime = Field(default_factory=datetime.now())
+
+class PaginatedAuditLogs(BaseModel):
+    total: int
+    page: int
+    limit: int
+    data: List[AuditLog]

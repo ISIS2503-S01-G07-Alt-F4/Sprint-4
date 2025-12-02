@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Warehouses from './pages/Warehouses';
 import Items from './pages/Items';
+import AuditLogs from './pages/AuditLogs';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/productos" element={<Products />} />
           <Route path="/bodegas" element={<Warehouses />} />
           <Route path="/items" element={<Items />} />
+          <Route path="/auditoria" element={<AuditLogs />} />
         </Routes>
       </Layout>
     </Router>

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status
-from models.audit_event import AuditEvent, AuditLog
+from typing import Optional
+from fastapi import APIRouter, Depends, status, Query
+from models.audit_event import AuditEvent, AuditLog, PaginatedAuditLogs
 from database.database import get_db, get_next_id
 from datetime import datetime
 
@@ -36,12 +37,29 @@ async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> di
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def listar_logs_auditoria(db=Depends(get_db)) -> list[AuditLog]:
+async def listar_logs_auditoria(
+    page: int = Query(1, ge=1), 
+    limit: int = Query(10, ge=1, le=100), 
+    service_id: Optional[str] = Query(None),
+    db=Depends(get_db)
+) -> PaginatedAuditLogs:
     """
-    Lista todos los logs de auditoría de los más recientes a los más antiguos.
+    Lista todos los logs de auditoría con paginación y filtrado opcional por servicio.
     """
-    logs =  db.audit_logs.find().sort("timestamp", -1).to_list(length=100)
-    return logs
+    query = {}
+    if service_id:
+        query["audited_service_id"] = service_id
+
+    skip = (page - 1) * limit
+    total = db.audit_logs.count_documents(query)
+    logs = db.audit_logs.find(query).sort("timestamp", -1).skip(skip).limit(limit).to_list(length=limit)
+    
+    return PaginatedAuditLogs(
+        total=total,
+        page=page,
+        limit=limit,
+        data=logs
+    )
 
 @router.get("/recent-events", status_code=status.HTTP_200_OK)
 async def listar_eventos_recientes(db=Depends(get_db)) -> list[AuditLog]:

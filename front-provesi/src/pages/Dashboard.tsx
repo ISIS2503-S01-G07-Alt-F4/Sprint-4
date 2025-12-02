@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
                     </span>
                 </Link>
 
-                <Link to="/warehouses" className="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500 rounded-lg shadow-card hover:shadow-card-hover transition-all duration-200 border border-gray-200">
+                <Link to="/bodegas" className="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500 rounded-lg shadow-card hover:shadow-card-hover transition-all duration-200 border border-gray-200">
                     <div>
                         <span className="rounded-lg inline-flex p-3 bg-purple-50 text-purple-700 ring-4 ring-white">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

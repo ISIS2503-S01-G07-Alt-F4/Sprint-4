@@ -13,6 +13,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/api/, ''),
       },
+      '/audit-api': {
+        target: 'http://audit:8000',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/audit-api/, ''),
+      },
     }
   }
 })

@@ -32,3 +32,30 @@ export interface Bodega {
     direccion: string;
     estanterias: Estanteria[];
 }
+
+export interface AuditLog {
+    id: string;
+    timestamp: string;
+    user_id: string;
+    audited_service_id: string;
+    action: "CREATE" | "READ" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT";
+    description: string;
+    entity: string;
+    entity_id: string;
+    metadata?: Record<string, any>;
+    ip?: string;
+    registered_at: string;
+}
+
+export interface PaginatedAuditLogs {
+    total: number;
+    page: number;
+    limit: number;
+    data: AuditLog[];
+}
+
+export interface AuditedService {
+    id: string;
+    name: string;
+    recent_logs?: AuditLog[];
+}
