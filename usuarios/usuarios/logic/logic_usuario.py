@@ -132,6 +132,11 @@ def login_usuario(request, form):
        
         user = get_or_create_usuario(username=username)
 
+        if (user==None):
+            return JsonResponse({
+                "error": "Credenciales inválidas"
+            }, status=401)
+
         login(request, user)
 
         return JsonResponse({

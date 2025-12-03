@@ -129,10 +129,18 @@ def login_usuario(request, form):
         request.session['access_token'] = tokens['access_token']
         
         request.session['id_token'] = tokens.get('id_token')
-       
+    
         user = get_or_create_usuario(username=username)
+        print(user)
+        logger.info("información "+user)
+        if user is None or isinstance(user, AnonymousUser):
+            return JsonResponse({
+                "error": "Credenciales inválidas",
+                "detalles": response.text
+            }, status=401)
+                
+        ##login(request, user)
 
-        login(request, user)
 
         return JsonResponse({
             "mensaje": "Login exitoso",
