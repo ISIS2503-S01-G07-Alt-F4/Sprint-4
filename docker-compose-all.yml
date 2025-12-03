@@ -54,6 +54,7 @@ services:
       file: pedidos/docker-compose.yml
       service: pedidos
     depends_on:
+      - postgres_pedidos
       - rabbitmq
       - inventario
 

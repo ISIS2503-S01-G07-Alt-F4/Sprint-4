@@ -2,9 +2,10 @@ services:
   postgres_pedidos:
     image: postgres:16
     environment:
-      POSTGRES_DB: inventario_db
-      POSTGRES_USER: inventario_user
-      POSTGRES_PASSWORD: inventario_pass
+      POSTGRES_DB: pedidos_db
+      POSTGRES_USER: pedidos_user
+      POSTGRES_PASSWORD: pedidos_pass
+      PGPORT: 5433
     ports:
       - "5433:5433"
     volumes:
@@ -20,10 +21,6 @@ services:
     depends_on:
       - postgres_pedidos
     environment:
-      - DJANGO_DB_HOST=${DJANGO_DB_HOST}
-      - DJANGO_DB_NAME=${DJANGO_DB_NAME}
-      - DJANGO_DB_USER=${DJANGO_DB_USER}
-      - DJANGO_DB_PASSWORD=${DJANGO_DB_PASSWORD}
       - ALERT_EMAIL=${ALERT_EMAIL}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
