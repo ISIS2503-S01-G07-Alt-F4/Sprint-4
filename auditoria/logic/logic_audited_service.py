@@ -2,12 +2,10 @@ from typing import Any, Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.audited_service import AuditedService, Service
 from database.database import get_db, get_next_id
-from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/audited-services",
     tags=["Audited-services"],
-    dependencies=[Depends(validate_auth0_token)],
 )
 db = get_db()
 

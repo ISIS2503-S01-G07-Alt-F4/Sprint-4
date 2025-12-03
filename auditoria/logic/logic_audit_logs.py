@@ -37,7 +37,7 @@ async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> di
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def listar_logs_auditoria(db=Depends(get_db), auth=Depends(validate_auth0_token)) -> list[AuditLog]:
+async def listar_logs_auditoria(db=Depends(get_db), dependencies=Depends(validate_auth0_token)) -> list[AuditLog]:
     """
     Lista todos los logs de auditoría de los más recientes a los más antiguos.
     """
@@ -45,7 +45,7 @@ async def listar_logs_auditoria(db=Depends(get_db), auth=Depends(validate_auth0_
     return logs
 
 @router.get("/recent-events", status_code=status.HTTP_200_OK)
-async def listar_eventos_recientes(db=Depends(get_db, auth=Depends(validate_auth0_token))) -> list[AuditLog]:
+async def listar_eventos_recientes(db=Depends(get_db),dependencies=Depends(validate_auth0_token)) -> list[AuditLog]:
     """
     Lista los 10 logs de auditoría más recientes.
     """
