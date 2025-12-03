@@ -14,10 +14,4 @@ class UsuarioCreateForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         rol = cleaned_data.get('rol')
-        bodegas = cleaned_data.get('bodegas')
-        
-        if rol in ['JefeBodega', 'Operario', 'Vendedor'] and not bodegas:
-            self.add_error('bodegas', 'Debe seleccionar al menos una bodega.')
-        elif rol == 'JefeBodega' and len(bodegas) > 1:
-            self.add_error('bodegas', 'El Jefe de Bodega solo puede tener una bodega asignada.')
         return cleaned_data

@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import messages
 from django.urls import reverse
@@ -66,7 +66,7 @@ def usuario_login_postman(request):
     context = {
         'form': form
     }
-    return render(request, 'Usuario/usuarioLogin.html', context)
+    return HttpResponse(form)
 
 def usuario_logout(request):
     cerrar_sesion(request)
@@ -75,6 +75,7 @@ def usuario_logout(request):
 def usuario_create(request):
     if request.method == 'POST':
         form = UsuarioCreateForm(request.POST)
+        print(form)
         if form.is_valid():
             data = form.cleaned_data
             create_usuario(data)
@@ -84,7 +85,7 @@ def usuario_create(request):
     else:
         form = UsuarioCreateForm()
     context = {'form': form}
-    return render(request, 'Usuario/usuarioCreate.html', context)
+    return HttpResponse({"codigo":200, "mensaje":"Usuario creado exitosamente"}, context)
 
 
 def expedirToken(request):
