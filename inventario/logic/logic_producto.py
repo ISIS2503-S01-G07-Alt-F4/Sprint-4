@@ -3,10 +3,12 @@ from database.database import get_db
 from models.producto import Producto
 from models.item import Item
 from logic.logic_audit_producer import enviar_evento_auditoria
+from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/productos",
-    tags=["Producto"]
+    tags=["Producto"],
+    dependencies=[Depends(validate_auth0_token)]
 )
 
 @router.get("/")

@@ -3,10 +3,12 @@ from database.database import get_db
 from models.estanteria import Estanteria
 from typing import Dict, Any
 from logic.logic_audit_producer import enviar_evento_auditoria
+from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/estanterias",
-    tags=["Estanteria"]
+    tags=["Estanteria"],
+    dependencies=[Depends(validate_auth0_token)]
 )
 
 @router.get("/", status_code=status.HTTP_200_OK)

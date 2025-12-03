@@ -23,6 +23,9 @@ services:
       RABBITMQ_HOST: ${RABBITMQ_HOST}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+      AUTHZ_DOMAIN: ${AUTHZ_DOMAIN}
+      AUTHZ_AUDIENCE: ${AUTHZ_AUDIENCE}
+      CLIENT_ID: ${CLIENT_ID}
     depends_on:
       - mongodb_inventario
 

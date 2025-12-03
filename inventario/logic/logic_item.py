@@ -3,10 +3,12 @@ from database.database import get_db
 from models.item import Item
 from typing import Dict, Any
 from logic.logic_audit_producer import enviar_evento_auditoria
+from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/items",
-    tags=["Item"]
+    tags=["Item"],
+    dependencies=[Depends(validate_auth0_token)]
 )
 
 @router.get("/{item_sku}", status_code=status.HTTP_200_OK)
