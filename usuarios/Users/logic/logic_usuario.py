@@ -1,8 +1,11 @@
+from datetime import datetime
 from functools import wraps
 import os
 from django.http import JsonResponse
 import jwt
 import requests
+import pika
+
 
 from ..models import Usuario, JefeBodega, Operario, Vendedor
 from django.contrib.auth import authenticate, login, logout 
@@ -52,6 +55,7 @@ def create_usuario(data):
             usuario = modelo.objects.create_user(**datos_usuario)
         crear_usuario_management_api(data['login'],data['contraseña'])
         print("Usuario creado correctamente")
+        enviar_evento_auditoria("1","1","creacion usuario", "creación exitosa", "Usuarios", "1")
         return usuario
         
     except Exception as e:
@@ -134,13 +138,14 @@ def login_usuario(request, form):
         print(user)
         logger.info("información "+user)
         if user is None or isinstance(user, AnonymousUser):
+            enviar_evento_auditoria("1","1","login", "login exitoso", "Usuarios", "1")
             return JsonResponse({
                 "error": "Credenciales inválidas",
                 "detalles": response.text
             }, status=401)
                 
         ##login(request, user)
-
+        enviar_evento_auditoria("1","1","login", "login exitoso", "Usuarios", "1")
 
         return JsonResponse({
             "mensaje": "Login exitoso",
@@ -149,6 +154,7 @@ def login_usuario(request, form):
         })
     else:
         print("SALIÓ MAL EL REQUEST")
+        enviar_evento_auditoria("1","1","login", "login no exitosos", "Usuarios", "1")
         return JsonResponse({
             "error": "Credenciales inválidas",
             "detalles": response.text
@@ -279,3 +285,44 @@ def expedirTokenLogic(request):
         return JsonResponse({"error": "No hay token en la sesión"}, status=400)
 
     return JsonResponse({"token": token})
+
+
+
+
+
+RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "localhost")
+RABBITMQ_USER = os.environ.get("RABBITMQ_USER", "admin")
+RABBITMQ_PASS = os.environ.get("RABBITMQ_PASS", "admin")
+QUEUE_NAME = "audit_queue"
+
+def enviar_evento_auditoria(user_id: str, action: str, description: str, entity: str, entity_id: str, metadata: dict = None, ip: str = None):
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials))
+        channel = connection.channel()
+        channel.queue_declare(queue=QUEUE_NAME, durable=True)
+
+        message = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "user_id": user_id,
+            "audited_service_id": "INVENTARIO",
+            "action": action,
+            "description": description,
+            "entity": entity,
+            "entity_id": entity_id,
+            "metadata": metadata or {},
+            "ip": ip
+        }
+
+        channel.basic_publish(
+            exchange='',
+            routing_key=QUEUE_NAME,
+            body=json.dumps(message),
+            properties=pika.BasicProperties(
+                delivery_mode=2
+            ))
+        
+        print(f" [x] Sent audit event: {action} on {entity}")
+        connection.close()
+    except Exception as e:
+        print(f"Failed to send audit event: {e}")
