@@ -75,8 +75,12 @@ WSGI_APPLICATION = 'usuarios.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'usuarios_db',
+        'USER': 'usuarios_user',
+        'PASSWORD': 'usuarios_pass',
+        'HOST': 'postgres_usuarios',
+        'PORT': '5434',
     }
 }
 

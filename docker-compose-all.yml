@@ -80,6 +80,21 @@ services:
     volumes:
       - ./kong.yml:/kong.yml
 
+  usuarios:
+    extends:
+      file: usuarios/docker-compose.yml
+      service: usuarios
+    environment:
+    depends_on:
+      - postgres_usuarios
+      - rabbitmq
+
+  postgres_usuarios:
+    extends:
+      file: usuarios/docker-compose.yml
+      service: postgres_usuarios
+
 volumes:
   mongo-data: {}
   postgres_pedidos_data: {}
+  postgres_usuarios_data: {}
