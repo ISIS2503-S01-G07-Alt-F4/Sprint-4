@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from models.audit_event import AuditEvent, AuditLog
 from database.database import get_db, get_next_id
 from datetime import datetime
+from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/audit-logs",
@@ -36,7 +37,7 @@ async def crear_log_auditoria(audit_event: AuditEvent, db=Depends(get_db)) -> di
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def listar_logs_auditoria(db=Depends(get_db)) -> list[AuditLog]:
+async def listar_logs_auditoria(db=Depends(get_db), auth=Depends(validate_auth0_token)) -> list[AuditLog]:
     """
     Lista todos los logs de auditoría de los más recientes a los más antiguos.
     """
@@ -44,7 +45,7 @@ async def listar_logs_auditoria(db=Depends(get_db)) -> list[AuditLog]:
     return logs
 
 @router.get("/recent-events", status_code=status.HTTP_200_OK)
-async def listar_eventos_recientes(db=Depends(get_db)) -> list[AuditLog]:
+async def listar_eventos_recientes(db=Depends(get_db, auth=Depends(validate_auth0_token))) -> list[AuditLog]:
     """
     Lista los 10 logs de auditoría más recientes.
     """
