@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: inventario_user
       POSTGRES_PASSWORD: inventario_pass
     ports:
-      - "5432:5432"
+      - "5433:5433"
     volumes:
       - postgres_pedidos_data:/var/lib/postgresql/data
 
