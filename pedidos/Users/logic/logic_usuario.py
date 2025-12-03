@@ -1,7 +1,6 @@
 from functools import wraps
 import os
 from django.http import JsonResponse
-import jwt
 import requests
 
 import Users
@@ -96,6 +95,8 @@ def create_usuario(data):
 #     else:
 #         return JsonResponse({"error": "Credenciales inválidas", "detalles": response.text}, status=401)
     
+from security.auth0 import Auth0TokenError, decode_auth0_token
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -198,65 +199,31 @@ def crear_usuario_management_api(username, password):
     print("RESPONSE TEXT crear:", response.text)
     return response.json()
 
-
-
-
-
-
-def verificar_token_auth0(token):
- 
-    try:
-        
-        
-        jwks_url = f"https://{os.getenv('AUTHZ_DOMAIN')}/.well-known/jwks.json"
-        jwks_client = jwt.PyJWKClient(jwks_url)
-        
-
-        signing_key = jwks_client.get_signing_key_from_jwt(token)
-   
-       
-        
-        payload = jwt.decode(
-            token,
-            signing_key.key,
-            algorithms=['RS256'],
-            audience=[os.getenv('AUTHZ_AUDIENCE'),os.getenv('CLIENT_ID')],
-            issuer=f"https://{os.getenv('AUTHZ_DOMAIN')}/"
-        )
-        
-        return payload
-        
-    except jwt.ExpiredSignatureError:
-        return {'error': 'Token expirado'}
-    except jwt.InvalidTokenError as e:
-        return {'error': f'Token inválido: {str(e)}'}
-    except Exception as e:
-        return {'error': f'Error verificando token: {str(e)}'}
-
 def token_requerido(f):
 
     @wraps(f)
     def decorador(request, *args, **kwargs):
-        if hasattr(request, 'session') and 'access_token' in request.session:
-            token = request.session['id_token']
+        token = None
+        if hasattr(request, 'session') and 'id_token' in request.session:
+            token = request.session.get('id_token')
         else:
             auth_header = request.META.get('HTTP_AUTHORIZATION', '')
             if auth_header.startswith('Bearer '):
                 token = auth_header.split(' ')[1]
-            else:
-                return JsonResponse({'error': 'Token requerido'}, status=401)
-        print(token)
-        print("ACÁ Se EsTa QUEDANDO")
-        resultado = verificar_token_auth0(token)
-        
-        if 'error' in resultado:
-            return JsonResponse({'error': resultado['error']}, status=401)
-        print(resultado)
-        username = resultado.get('nickname')
-        username_original = resultado.get('user_metadata', {}).get('username_original')
-        print(username_original)
-        try:
 
+        if not token:
+            return JsonResponse({'error': 'Token requerido'}, status=401)
+
+        try:
+            payload = decode_auth0_token(token)
+        except Auth0TokenError as exc:
+            return JsonResponse({'error': str(exc)}, status=exc.status_code)
+
+        username_original = payload.get('user_metadata', {}).get('username_original')
+        if not username_original:
+            username_original = payload.get('nickname')
+        
+        try:
             usuario = Usuario.objects.get(login=username_original)
             request.user = usuario
         except Usuario.DoesNotExist:

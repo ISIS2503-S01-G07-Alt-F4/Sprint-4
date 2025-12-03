@@ -12,6 +12,7 @@ from .logic.logic_api import procesar_creacion_producto_completa
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
 @csrf_exempt
+@token_requerido
 def crear_producto_api(request):
     """
     Endpoint para crear un nuevo producto
@@ -129,6 +130,7 @@ def health_check(request):
     return Response({"status": "ok"}, status=200)
 
 @api_view(['GET'])
+@token_requerido
 def verificar_integridad(request):
     return Response(verificar_integridad_pedido(request.data))
 
