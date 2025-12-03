@@ -154,7 +154,7 @@ def login_usuario(request, form):
         })
     else:
         print("SALIÓ MAL EL REQUEST")
-        enviar_evento_auditoria("1","1","login", "login no exitosos", "Usuarios", "1")
+        enviar_evento_auditoria("1","1","login", "login no exitoso", "Usuarios", "1")
         return JsonResponse({
             "error": "Credenciales inválidas",
             "detalles": response.text

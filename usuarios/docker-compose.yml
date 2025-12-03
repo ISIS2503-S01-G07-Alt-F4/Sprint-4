@@ -21,6 +21,9 @@ services:
     depends_on:
       - postgres_usuarios
     environment:
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABITMQ_PASS=${RABBITMQ_PASSWORD}
       - DJANGO_DB_HOST=${DJANGO_DB_HOST}
       - DJANGO_DB_NAME=${DJANGO_DB_NAME}
       - DJANGO_DB_USER=${DJANGO_DB_USER}
