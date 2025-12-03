@@ -1,12 +1,13 @@
 from functools import wraps
 import os
-from django.http import JsonResponse
+import logging
+
 import jwt
 import requests
+from django.http import JsonResponse
+from django.contrib.auth import login, logout
 
 from ..models import Usuario, JefeBodega, Operario, Vendedor
-from django.contrib.auth import authenticate, login, logout 
-from django.contrib import messages
 def get_usuarios():
     queryset = Usuario.objects.all()
     return (queryset)
@@ -95,7 +96,6 @@ def create_usuario(data):
 #     else:
 #         return JsonResponse({"error": "Credenciales inválidas", "detalles": response.text}, status=401)
     
-import logging
 logger = logging.getLogger(__name__)
 
 def login_usuario(request, form):
@@ -159,8 +159,6 @@ def get_or_create_usuario(username):
         print(f"Usuario {username} no existe")
         usuario = None
         return None
-
-    import requests
 
 def obtener_token_management_api():
     url = f"https://{os.getenv('AUTHZ_DOMAIN')}/oauth/token"
@@ -232,38 +230,38 @@ def verificar_token_auth0(token):
     except Exception as e:
         return {'error': f'Error verificando token: {str(e)}'}
 
-def token_requerido(f):
+# def token_requerido(f):
 
-    @wraps(f)
-    def decorador(request, *args, **kwargs):
-        if hasattr(request, 'session') and 'access_token' in request.session:
-            token = request.session['id_token']
-        else:
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-            else:
-                return JsonResponse({'error': 'Token requerido'}, status=401)
-        print(token)
-        print("ACÁ Se EsTa QUEDANDO")
-        resultado = verificar_token_auth0(token)
+#     @wraps(f)
+#     def decorador(request, *args, **kwargs):
+#         if hasattr(request, 'session') and 'access_token' in request.session:
+#             token = request.session['id_token']
+#         else:
+#             auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+#             if auth_header.startswith('Bearer '):
+#                 token = auth_header.split(' ')[1]
+#             else:
+#                 return JsonResponse({'error': 'Token requerido'}, status=401)
+#         print(token)
+#         print("ACÁ Se EsTa QUEDANDO")
+#         resultado = verificar_token_auth0(token)
         
-        if 'error' in resultado:
-            return JsonResponse({'error': resultado['error']}, status=401)
-        print(resultado)
-        username = resultado.get('nickname')
-        username_original = resultado.get('user_metadata', {}).get('username_original')
-        print(username_original)
-        try:
+#         if 'error' in resultado:
+#             return JsonResponse({'error': resultado['error']}, status=401)
+#         print(resultado)
+#         username = resultado.get('nickname')
+#         username_original = resultado.get('user_metadata', {}).get('username_original')
+#         print(username_original)
+#         try:
 
-            usuario = Usuario.objects.get(login=username_original)
-            request.user = usuario
-        except Usuario.DoesNotExist:
-            return JsonResponse({'error': 'Usuario no encontrado en sistema'}, status=404)
+#             usuario = Usuario.objects.get(login=username_original)
+#             request.user = usuario
+#         except Usuario.DoesNotExist:
+#             return JsonResponse({'error': 'Usuario no encontrado en sistema'}, status=404)
         
-        return f(request, *args, **kwargs)
-    decorador.csrf_exempt = True
-    return decorador
+#         return f(request, *args, **kwargs)
+#     decorador.csrf_exempt = True
+#     return decorador
 
 def expedirTokenLogic(request):
     token = request.session.get('id_token')

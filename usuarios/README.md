@@ -1,14 +1,30 @@
-# Sprint-2
-El sprint 2 :)
+# Usuarios microservice
 
-## Tutorial de uso de Docker
-1. Instalar Docker Desktop desde [aquí](https://www.docker.com/products/docker-desktop/) (Probablemente ya lo tengan por TIC).
-2. Correr Docker Desktop.
-3. Abrir la terminal.
-4. Ejecutar el comando `docker-compose up --build` en la terminal, en la carpeta donde está este proyecto.
-5. Esperar a que termine de correr (la primera vez puede tardar un poco más).
-6. Usarlo normalmente como si fuera un proyecto de Django normal.
-7. Cuando lo vuelvan a usar, solo necesitan correr `docker-compose up` (sin el `--build`).
-8. Para ejecutar algun comando en la terminal del contenedor de Django, ejecutar `docker-compose exec django bash`.
-9. Para salir de la terminal del contenedor, ejecutar `exit`.
-10. Ser feliz :D
+Microservicio Django responsable de la administración de usuarios y la integración con Auth0.
+
+## Ejecutar con Docker
+1. Instala y levanta Docker Desktop.
+2. Desde la carpeta `usuarios/` ejecuta `docker compose up --build` la primera vez.
+3. Para reinicios posteriores basta con `docker compose up`.
+
+El contenedor aplica migraciones automáticamente y expone la aplicación en `http://localhost:8081`.
+
+### Variables de entorno relevantes
+Se consumen desde el archivo `.env` ubicado en la raíz del monorepo.
+
+| Variable | Descripción |
+| --- | --- |
+| `DJANGO_DB_*` | Configuración de la base de datos Postgres. |
+| `AUTHZ_DOMAIN` | Dominio de Auth0 (sin protocolo). |
+| `AUTHZ_AUDIENCE` | Audience configurado en Auth0. |
+| `CLIENT_ID` / `CLIENT_SECRET` | Credenciales de la aplicación machine-to-machine. |
+
+## APIs para expedición de tokens JWT
+
+| Método/Path | Descripción |
+| --- | --- |
+| `POST /api/auth/tokens/password/` | Solicita a Auth0 un JWT usando username/password (resource-owner password). Espera `username`, `password` y opcional `audience`. |
+| `POST /api/auth/tokens/client-credentials/` | Solicita un token vía client-credentials, opcionalmente con otro `audience`. |
+| `GET /api/auth/tokens/session/` | Devuelve el `id_token` almacenado en la sesión del usuario autenticado. |
+
+Estas rutas devuelven directamente la respuesta de Auth0 y se pueden consumir desde otros microservicios sin necesidad de reconstruir el contenedor.

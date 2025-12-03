@@ -8,17 +8,17 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_pedidos_data:/var/lib/postgresql/data
+      - postgres_usuarios_data:/var/lib/postgresql/data
 
   usuarios:
     build: .
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8080"
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8081"
     volumes:
       - .:/app
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
-      - postgres_pedidos
+      - postgres_usuarios
     environment:
       - DJANGO_DB_HOST=${DJANGO_DB_HOST}
       - DJANGO_DB_NAME=${DJANGO_DB_NAME}

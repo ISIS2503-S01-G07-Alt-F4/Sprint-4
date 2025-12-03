@@ -3,10 +3,13 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.urls import reverse
 
-from Users.forms import UsuarioCreateForm, UsuarioLoginForm
-from Users.logic.logic_usuario import expedirTokenLogic, login_usuario, cerrar_sesion
-from Users.models import Usuario, JefeBodega, Operario
-from Users.logic.logic_usuario import create_usuario
+from .forms import UsuarioCreateForm, UsuarioLoginForm
+from .logic.logic_usuario import (
+    create_usuario,
+    expedirTokenLogic,
+    login_usuario,
+    cerrar_sesion,
+)
 # Create your views here.
 
 import logging

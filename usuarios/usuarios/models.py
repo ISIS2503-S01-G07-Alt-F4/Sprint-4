@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from Inventario.models import Bodega
 # Código parcialmente tomado de: https://testdriven.io/blog/django-custom-user-model/
 
 class UsuarioManager(BaseUserManager):
@@ -36,10 +35,10 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         return self.login
 
 class Operario(Usuario):
-    bodega = models.ManyToManyField('Inventario.Bodega')
+    bodega = models.CharField(max_length=100)
 
 class JefeBodega(Usuario):
-    bodega = models.ForeignKey('Inventario.Bodega', on_delete=models.DO_NOTHING)
+    bodega = models.CharField(max_length=100)
 
 class Vendedor(Usuario):
-    bodega = models.ManyToManyField('Inventario.Bodega')
+    bodega = models.CharField(max_length=100)
