@@ -180,11 +180,15 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Configuración para comunicación vía API Gateway (Kong)
-API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://kong:8000')
-INVENTARIO_SERVICE_PATH = os.environ.get('INVENTARIO_SERVICE_PATH', '/inventario')
+# Configuración para comunicación vía API Gateway (Kong) - hardcoded por simplicidad
+API_GATEWAY_URL = 'http://localhost:8000'
+INVENTARIO_SERVICE_PATH = '/inventario'
 INVENTARIO_URL = f"{API_GATEWAY_URL}{INVENTARIO_SERVICE_PATH}"
 
-# Microservicio de Usuarios (futuro, vía Kong)
-USERS_SERVICE_PATH = os.environ.get('USERS_SERVICE_PATH', '/usuarios')
+# Microservicio de Usuarios (vía Kong)
+USERS_SERVICE_PATH = '/usuarios'
 USERS_SERVICE_URL = f"{API_GATEWAY_URL}{USERS_SERVICE_PATH}"
+
+# Microservicio de Auditoría (vía Kong)
+AUDITORIA_SERVICE_PATH = '/auditoria'
+AUDITORIA_URL = f"{API_GATEWAY_URL}{AUDITORIA_SERVICE_PATH}"

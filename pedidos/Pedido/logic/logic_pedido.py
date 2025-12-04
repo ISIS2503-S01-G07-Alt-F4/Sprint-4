@@ -1,6 +1,7 @@
 from Pedido.logic.logic_inventario import get_item, get_bodega
 from Pedido.logic.logic_factura import crear_factura_para_pedido
 from Pedido.logic.logic_usuario import verificar_permiso_rol, obtener_operario
+from Pedido.logic.logic_auditoria import enviar_evento_auditoria
 from Pedido.models import Pedido
 from Pedido.serializers import PedidoCreateSerializer, PedidoSerializer
 from rest_framework import status
@@ -46,7 +47,7 @@ def procesar_creacion_pedido_completa(request):
         
         print("Llega hasta acá")
         #Crear pedido
-        success_response, error_response = crear_pedido_logica(pedido_data)
+        success_response, error_response = crear_pedido_logica(pedido_data, user_data)
         if error_response:
             return error_response
         return success_response
@@ -57,7 +58,7 @@ def procesar_creacion_pedido_completa(request):
     
 
 
-def crear_pedido_logica(pedido_data):
+def crear_pedido_logica(pedido_data, user_data):
     """
     Lógica principal para crear un producto usando los serializers
     """
@@ -69,6 +70,15 @@ def crear_pedido_logica(pedido_data):
         if serializer.is_valid():
             # Crear el pedido
             pedido = serializer.save()
+            # Audit: creación de pedido
+            enviar_evento_auditoria(
+                user_data,
+                action="CREATE",
+                entity="PEDIDO",
+                entity_id=pedido.id,
+                description=f"Pedido creado por {user_data.get('username','usuario')}",
+                metadata={"estado": pedido.estado, "items": list(pedido.items.values_list('sku', flat=True))}
+            )
             # Serializar la respuesta con información completa
             response_serializer = PedidoSerializer(pedido)
             return Response({'mensaje': 'Pedido creado exitosamente', 'pedido': response_serializer.data, 'codigo': 'SUCCESS'}, status=status.HTTP_201_CREATED), None
@@ -298,6 +308,26 @@ def actualizar_estado_pedido_api(request):
                 'error': mensaje,
                 'codigo': 'INSUFFICIENT_PERMISSIONS'
             }, status=status.HTTP_403_FORBIDDEN)
+
+        # Aplicar cambio de estado
+        pedido = Pedido.objects.get(id=pedido_id)
+        estado_anterior = pedido.estado
+        pedido.estado = nuevo_estado
+        pedido.save()
+
+        # Audit: actualización de estado de pedido
+        enviar_evento_auditoria(
+            user_data,
+            action="UPDATE",
+            entity="PEDIDO",
+            entity_id=pedido.id,
+            description=f"Estado de pedido actualizado de '{estado_anterior}' a '{nuevo_estado}' por {user_data.get('username','usuario')}",
+            metadata={
+                "estado_anterior": estado_anterior,
+                "nuevo_estado": nuevo_estado,
+                "usuario": user_data.get('username')
+            }
+        )
         
         # Actualizar
         pedido, error = actualizar_estado_pedido(pedido_id, nuevo_estado)
@@ -360,6 +390,15 @@ def consultar_pedido_por_id(request, id_pedido):
             verificado = pedido.verificar_integridad()
             if verificado:
                 serializer = PedidoSerializer(pedido)
+                # Audit: lectura/consulta de pedido
+                enviar_evento_auditoria(
+                    user_data,
+                    action="READ",
+                    entity="PEDIDO",
+                    entity_id=pedido.id,
+                    description="Consulta de pedido",
+                    metadata={"estado": pedido.estado}
+                )
                 return Response({
                     'mensaje': 'Estado actualizado exitosamente',
                     'pedido': serializer.data,

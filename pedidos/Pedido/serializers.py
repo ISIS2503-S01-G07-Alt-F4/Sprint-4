@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Cliente, Item, Pedido, Producto, Estanteria, Bodega, ProductoSolicitado
+from Pedido.logic.logic_usuario import obtener_operario
 
 
 class ProductoSerializer(serializers.ModelSerializer):
@@ -94,6 +95,17 @@ class PedidoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pedido
         fields = ['cliente', 'estado', 'items', 'operario', 'productos_solicitados']
+
+    def validate(self, attrs):
+        operario_login = attrs.get('operario')
+        if not operario_login:
+            raise serializers.ValidationError({'operario': 'El login del operario es requerido'})
+
+        operario_data = obtener_operario(operario_login)
+        if not operario_data:
+            raise serializers.ValidationError({'operario': 'Operario no encontrado en el microservicio de usuarios'})
+
+        return attrs
     
     def create(self, validated_data):
         productos_solicitados_data = validated_data.pop('productos_solicitados', [])
