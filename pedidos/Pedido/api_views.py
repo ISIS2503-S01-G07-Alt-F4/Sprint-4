@@ -14,42 +14,28 @@ from Pedido.logic.logic_usuario import token_requerido
 def crear_pedido_api(request):
     """
     Endpoint para crear un nuevo pedido
-    
+
+    Autenticación:
+    - Se requiere enviar el token en el header Authorization: Bearer <token>
+
     Parámetros requeridos en el body JSON:
-    - username: Usuario para autenticación
-    - password: Contraseña para autenticación
-    - Bodega_seleccionada: Es el id de la bodega a la que se le remite el pedido
-    - cliente: Id del cliente relacionado con el pedido
+    - bodega_seleccionada: ID de la bodega a la que se le remite el pedido
+    - cliente: ID del cliente relacionado con el pedido
     - operario: login del operario al que se le asigna el pedido
-    - items: una lista de los SKU de los items del pedido
-    - productos_solicitados: una lista en formato json donde cada elemento tiene el id del producto
-      junto con la cantidad pedida de dicho producto. Sobra decir que tiene que ser la misma cantidad
-      de productos_solicitados que de items.
-    
+    - items: lista de los SKU de los items del pedido
+    - productos_solicitados: lista en formato json donde cada elemento tiene el id del producto y la cantidad pedida
+
     Ejemplo de request:
     {
-        "username": "operario1",
-        "password": "password123",
-        "bodega_seleccionada": 1
-        "cliente" : 1,
-        "operario" : "Joao",
-        "items":[1,2,3],
-        "productos_solicitados":
-        {
-            {
-                "producto":1,
-                "cantidad":2
-            },
-            {
-                "producto":2,
-                "cantidad":3
-            },
-            {
-                "producto":3,
-                "cantidad":4
-            }
-        }
-
+        "bodega_seleccionada": 1,
+        "cliente": 1,
+        "operario": "Joao",
+        "items": [1,2,3],
+        "productos_solicitados": [
+            {"producto": 1, "cantidad": 2},
+            {"producto": 2, "cantidad": 3},
+            {"producto": 3, "cantidad": 4}
+        ]
     }
     """
     return procesar_creacion_pedido_completa(request)

@@ -12,8 +12,6 @@ const Orders: React.FC = () => {
     // Form State for Creating Order
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newPedido, setNewPedido] = useState({
-        username: '',
-        password: '',
         bodega_seleccionada: '',
         cliente: 0,
         operario: '',
@@ -25,8 +23,6 @@ const Orders: React.FC = () => {
     const [showStatusForm, setShowStatusForm] = useState(false);
     const [selectedPedidoId, setSelectedPedidoId] = useState<number | null>(null);
     const [statusChange, setStatusChange] = useState({
-        username: '',
-        password: '',
         nuevo_estado: '',
         metodo_pago: '',
         num_cuenta: '',
@@ -116,8 +112,6 @@ const Orders: React.FC = () => {
             
             // Reset form
             setNewPedido({
-                username: '',
-                password: '',
                 bodega_seleccionada: '',
                 cliente: 0,
                 operario: '',
@@ -146,8 +140,6 @@ const Orders: React.FC = () => {
             } : undefined;
 
             await cambiarEstadoPedido(selectedPedidoId, {
-                username: statusChange.username,
-                password: statusChange.password,
                 nuevo_estado: statusChange.nuevo_estado,
                 pedido_id: selectedPedidoId,
                 datos_factura
@@ -155,8 +147,6 @@ const Orders: React.FC = () => {
 
             // Reset form
             setStatusChange({
-                username: '',
-                password: '',
                 nuevo_estado: '',
                 metodo_pago: '',
                 num_cuenta: '',
@@ -254,26 +244,6 @@ const Orders: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-4">Crear Nuevo Pedido</h2>
                     <form onSubmit={handleCreatePedido} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Usuario *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newPedido.username}
-                                    onChange={(e) => setNewPedido({...newPedido, username: e.target.value})}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Contraseña *</label>
-                                <input
-                                    type="password"
-                                    required
-                                    value={newPedido.password}
-                                    onChange={(e) => setNewPedido({...newPedido, password: e.target.value})}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                />
-                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Bodega *</label>
                                 <select
@@ -416,26 +386,6 @@ const Orders: React.FC = () => {
                     <h2 className="text-xl font-semibold mb-4">Cambiar Estado del Pedido #{selectedPedidoId}</h2>
                     <form onSubmit={handleStatusChange} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Usuario *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={statusChange.username}
-                                    onChange={(e) => setStatusChange({...statusChange, username: e.target.value})}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Contraseña *</label>
-                                <input
-                                    type="password"
-                                    required
-                                    value={statusChange.password}
-                                    onChange={(e) => setStatusChange({...statusChange, password: e.target.value})}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                />
-                            </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700">Nuevo Estado *</label>
                                 <select

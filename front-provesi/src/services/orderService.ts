@@ -15,8 +15,6 @@ export const getPedido = async (id: number) => {
 
 // Crear un nuevo pedido
 export const createPedido = async (pedidoData: {
-  username: string;
-  password: string;
   bodega_seleccionada: string;
   cliente: number;
   operario: string;
@@ -31,8 +29,6 @@ export const createPedido = async (pedidoData: {
 export const cambiarEstadoPedido = async (
   id: number,
   estadoData: {
-    username: string;
-    password: string;
     nuevo_estado: string;
     pedido_id: number;
     datos_factura?: {
