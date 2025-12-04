@@ -39,8 +39,12 @@ def procesar_creacion_pedido_completa(request):
                 'codigo': 'INSUFFICIENT_PERMISSIONS'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        #Validar datos del producto
-        pedido_data, campos_faltantes = validar_datos_pedido(request_data)
+        # Preparar encabezados con el mismo token recibido
+        auth_header = request.headers.get('Authorization')
+        inv_headers = {'Authorization': auth_header} if auth_header else None
+
+        # Validar datos del producto (pasando headers para inventario)
+        pedido_data, campos_faltantes = validar_datos_pedido(request_data, inv_headers)
         
         if campos_faltantes != []:
             return Response({'error': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}','codigo': 'MISSING_FIELDS','campos_faltantes': campos_faltantes}, status=status.HTTP_400_BAD_REQUEST)
@@ -90,7 +94,7 @@ def crear_pedido_logica(pedido_data, user_data):
         return None, Response({'error': f'Error interno del servidor: {str(e)}','codigo': 'INTERNAL_ERROR'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def validar_datos_pedido(request_data):
+def validar_datos_pedido(request_data, inv_headers=None):
     """
     Valida que todos los campos requeridos estén presentes
     """
@@ -134,7 +138,7 @@ def validar_datos_pedido(request_data):
             skus_no_encontrados = []
             
             for sku in items_ids:
-                item_data = get_item(sku)
+                item_data = get_item(sku, headers=inv_headers)
                 if item_data:
                     items_productos[sku] = item_data['producto_id']
                 else:
@@ -168,19 +172,19 @@ def validar_datos_pedido(request_data):
     # Validar que los items estén en la bodega seleccionada
     if bodega_seleccionada_id and items_ids:
         try:
-            bodega_data = get_bodega(bodega_seleccionada_id)
+            bodega_data = get_bodega(bodega_seleccionada_id, headers=inv_headers)
             if not bodega_data:
                  return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
             
             # Verificar cada item
             items_fuera_de_bodega = []
             for item_id in items_ids:
-                item_data = get_item(item_id)
+                item_data = get_item(item_id, headers=inv_headers)
                 if not item_data:
                      return None, [f"Item con SKU {item_id} no existe"]
                 
                 if item_data.get('bodega_id') != bodega_seleccionada_id:
-                        actual_bodega = get_bodega(item_data.get('bodega_id'))
+                        actual_bodega = get_bodega(item_data.get('bodega_id'), headers=inv_headers)
                         actual_bodega_name = actual_bodega.get('ciudad', 'Desconocida') if actual_bodega else 'Desconocida'
                         
                         items_fuera_de_bodega.append({
