@@ -84,9 +84,6 @@ class Pedido(models.Model):
         INTEGRITY_KEY = os.getenv("INTEGRITY_KEY")
         if not INTEGRITY_KEY:
             raise RuntimeError("Falta INTEGRITY_KEY en las variables de entorno")
-        print("___datos___")
-        print(self._datos_para_hash())
-        print("___________")
         return hmac.new(INTEGRITY_KEY.encode(), self._datos_para_hash(), hashlib.sha256).hexdigest()
 
     

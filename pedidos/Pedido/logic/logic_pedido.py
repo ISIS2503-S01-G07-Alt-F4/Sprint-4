@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from Pedido.logic.logic_inventario import (
     get_bodega,
     get_items_disponibles_por_producto,
@@ -60,7 +62,6 @@ def procesar_creacion_pedido_completa(request):
             
             return Response({'error': error_msg, 'codigo': codigo, 'campos_faltantes': campos_faltantes}, status=status.HTTP_400_BAD_REQUEST)
         
-        print("Llega hasta acá")
         #Crear pedido
         success_response, error_response = crear_pedido_logica(pedido_data, user_data)
         if error_response:
@@ -79,9 +80,7 @@ def crear_pedido_logica(pedido_data, user_data):
     """
     try:
         # Crear el serializer con el usuario para validacionesp
-        print(f"Datos recibidos para crear pedido: {pedido_data}")
         serializer = PedidoCreateSerializer(data=pedido_data)
-        print("Puede crear el serializer")
         if serializer.is_valid():
             # Crear el pedido
             pedido = serializer.save()
@@ -161,6 +160,8 @@ def validar_datos_pedido(request_data, inv_headers=None):
         return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
 
     # Validar productos y disponibilidad
+    import time 
+    tiempo_actual = time.time()
     for producto in productos_solicitados_data:
         producto_codigo = producto['producto']
         producto_data = get_producto(producto_codigo, headers=inv_headers)
@@ -184,7 +185,8 @@ def validar_datos_pedido(request_data, inv_headers=None):
                 f"No hay suficientes items disponibles del producto {producto_codigo} en la bodega {bodega_seleccionada_id}. "
                 f"Solicitado {producto['cantidad']}, disponibles {disponibles}"
             ]
-
+    tiempo_final = time.time()
+    logger.debug(f"Tiempo de validación: {(tiempo_final - tiempo_actual)*1000} milisegundos")
     return pedido_data, []
 
 
