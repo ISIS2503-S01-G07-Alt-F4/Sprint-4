@@ -1,7 +1,7 @@
 import requests
 from django.conf import settings
 
-AUDITORIA_URL = getattr(settings, 'AUDITORIA_URL', 'http://localhost:8000/auditoria')
+AUDITORIA_URL = getattr(settings, 'AUDITORIA_URL', 'http://kong:8000/auditoria')
 
 def enviar_evento_auditoria(user_data, action, entity, entity_id, description, metadata=None):
     """

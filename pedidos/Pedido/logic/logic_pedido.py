@@ -151,8 +151,8 @@ def validar_datos_pedido(request_data, inv_headers=None):
             # 4. Verificar coincidencia de productos
             productos_no_coincidentes = []
             for i, item_sku in enumerate(items_ids):
-                producto_solicitado_codigo = productos_solicitados_data[i]['producto']
-                producto_item_codigo = items_productos[item_sku]
+                producto_solicitado_codigo = str(productos_solicitados_data[i]['producto']).strip()
+                producto_item_codigo = str(items_productos[item_sku]).strip()
                 
                 if producto_item_codigo != producto_solicitado_codigo:
                     productos_no_coincidentes.append({
@@ -183,7 +183,7 @@ def validar_datos_pedido(request_data, inv_headers=None):
                 if not item_data:
                      return None, [f"Item con SKU {item_id} no existe"]
                 
-                if item_data.get('bodega_id') != bodega_seleccionada_id:
+                if str(item_data.get('bodega_id')).strip() != str(bodega_seleccionada_id).strip():
                         actual_bodega = get_bodega(item_data.get('bodega_id'), headers=inv_headers)
                         actual_bodega_name = actual_bodega.get('ciudad', 'Desconocida') if actual_bodega else 'Desconocida'
                         

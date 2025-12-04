@@ -180,15 +180,8 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Configuración para comunicación vía API Gateway (Kong) - hardcoded por simplicidad
-API_GATEWAY_URL = 'http://localhost:8000'
-INVENTARIO_SERVICE_PATH = '/inventario'
-INVENTARIO_URL = f"{API_GATEWAY_URL}{INVENTARIO_SERVICE_PATH}"
-
-# Microservicio de Usuarios (vía Kong)
-USERS_SERVICE_PATH = '/usuarios'
-USERS_SERVICE_URL = f"{API_GATEWAY_URL}{USERS_SERVICE_PATH}"
-
-# Microservicio de Auditoría (vía Kong)
-AUDITORIA_SERVICE_PATH = '/auditoria'
-AUDITORIA_URL = f"{API_GATEWAY_URL}{AUDITORIA_SERVICE_PATH}"
+# Configuración para comunicación entre microservicios en Docker
+# Dentro de Docker, usamos los nombres de los servicios como hosts
+USERS_SERVICE_URL = 'http://usuarios:8081/usuarios'
+INVENTARIO_URL = 'http://inventario:8000'
+AUDITORIA_URL = 'http://audit:8000'

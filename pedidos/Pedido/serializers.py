@@ -101,9 +101,10 @@ class PedidoCreateSerializer(serializers.ModelSerializer):
         if not operario_login:
             raise serializers.ValidationError({'operario': 'El login del operario es requerido'})
 
-        operario_data = obtener_operario(operario_login)
-        if not operario_data:
-            raise serializers.ValidationError({'operario': 'Operario no encontrado en el microservicio de usuarios'})
+        # TODO: Validar operario contra el microservicio de usuarios cuando el endpoint esté disponible
+        # operario_data = obtener_operario(operario_login)
+        # if not operario_data:
+        #     raise serializers.ValidationError({'operario': 'Operario no encontrado en el microservicio de usuarios'})
 
         return attrs
     
