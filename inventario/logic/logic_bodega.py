@@ -5,10 +5,12 @@ from models.item import Item
 from models.estanteria import Estanteria
 from models.bodega import Bodega
 from logic.logic_audit_producer import enviar_evento_auditoria
+from security.auth0 import validate_auth0_token
 
 router = APIRouter(
     prefix="/bodegas",
-    tags=["Bodega"]
+    tags=["Bodega"],
+    dependencies=[Depends(validate_auth0_token)]
 )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

@@ -95,12 +95,12 @@ DB_PORT = os.environ.get("DATABASE_PORT") or os.environ.get("DJANGO_DB_PORT") or
 if DB_HOST:
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": DB_NAME,
-            "USER": DB_USER,
-            "PASSWORD": DB_PASSWORD,
-            "HOST": DB_HOST,
-            "PORT": DB_PORT,
+            "ENGINE": 'django.db.backends.postgresql',
+            "NAME": 'pedidos_db',
+            "USER": 'pedidos_user',
+            "PASSWORD": 'pedidos_pass',
+            "HOST": 'postgres_pedidos',
+            "PORT": '5433',
         }
     }
 else:

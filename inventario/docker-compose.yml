@@ -16,8 +16,13 @@ services:
       - "8000:8000"
     volumes:
       - ./:/app
+    environment:
+      AUTHZ_DOMAIN: ${AUTHZ_DOMAIN}
+      AUTHZ_AUDIENCE: ${AUTHZ_AUDIENCE}
+      CLIENT_ID: ${CLIENT_ID}
     command: "fastapi dev main.py --host 0.0.0.0 --port 8000"
     depends_on:
       - mongodb_inventario
+
 volumes:
   mongo-data:

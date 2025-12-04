@@ -9,15 +9,11 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
-    networks:
-      - red
 
   mongodb_inventario:
     extends:
       file: inventario/docker-compose.yml
       service: mongodb_inventario
-    networks:
-      - red
 
   inventario:
     extends:
@@ -27,10 +23,11 @@ services:
       RABBITMQ_HOST: ${RABBITMQ_HOST}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+      AUTHZ_DOMAIN: ${AUTHZ_DOMAIN}
+      AUTHZ_AUDIENCE: ${AUTHZ_AUDIENCE}
+      CLIENT_ID: ${CLIENT_ID}
     depends_on:
       - mongodb_inventario
-    networks:
-      - red
 
   front-provesi:
     build: ./front-provesi
@@ -38,15 +35,11 @@ services:
       - "3000:3000"
     depends_on:
       - inventario
-    networks:
-      - red
 
   mongodb_audit:
     extends:
       file: auditoria/docker-compose.yml
       service: mongodb_audit
-    networks:
-      - red
 
   audit:
     extends:
@@ -58,25 +51,20 @@ services:
       RABBITMQ_PASS: admin
     depends_on:
       - rabbitmq
-    networks:
-      - red
 
   pedidos:
     extends:
       file: pedidos/docker-compose.yml
       service: pedidos
     depends_on:
+      - postgres_pedidos
       - rabbitmq
       - inventario
-    networks:
-      - red
 
   postgres_pedidos:
     extends:
       file: pedidos/docker-compose.yml
       service: postgres_pedidos
-    networks:
-      - red
 
   kong:
     image: kong:3.0
@@ -95,13 +83,22 @@ services:
       - "8443:8443"
     volumes:
       - ./kong.yml:/kong.yml
-    networks:
-      - red
+
+  usuarios:
+    extends:
+      file: usuarios/docker-compose.yml
+      service: usuarios
+    environment:
+    depends_on:
+      - postgres_usuarios
+      - rabbitmq
+
+  postgres_usuarios:
+    extends:
+      file: usuarios/docker-compose.yml
+      service: postgres_usuarios
 
 volumes:
   mongo-data: {}
   postgres_pedidos_data: {}
-
-networks:
-  red:
-    driver: bridge
+  postgres_usuarios_data: {}
