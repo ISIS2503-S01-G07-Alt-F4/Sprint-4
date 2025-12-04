@@ -47,7 +47,14 @@ def procesar_creacion_pedido_completa(request):
         pedido_data, campos_faltantes = validar_datos_pedido(request_data, inv_headers)
         
         if campos_faltantes != []:
-            return Response({'error': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}','codigo': 'MISSING_FIELDS','campos_faltantes': campos_faltantes}, status=status.HTTP_400_BAD_REQUEST)
+            # Determinar el tipo de error
+            error_msg = campos_faltantes[0]
+            if "stock" in error_msg.lower() or "no existen" in error_msg.lower() or "no coinciden" in error_msg.lower() or "no pertenecen" in error_msg.lower():
+                codigo = 'INVENTORY_ERROR'
+            else:
+                codigo = 'MISSING_FIELDS'
+            
+            return Response({'error': error_msg, 'codigo': codigo, 'campos_faltantes': campos_faltantes}, status=status.HTTP_400_BAD_REQUEST)
         
         print("Llega hasta acá")
         #Crear pedido
@@ -146,7 +153,7 @@ def validar_datos_pedido(request_data, inv_headers=None):
             
             # 3. Verificar que todos los SKUs existen
             if skus_no_encontrados:
-                return None, [f"Los siguientes SKUs no existen: {', '.join(skus_no_encontrados)}"]
+                return None, [f"No hay stock disponible para los siguientes SKUs: {', '.join(skus_no_encontrados)}"]
             
             # 4. Verificar coincidencia de productos
             productos_no_coincidentes = []
