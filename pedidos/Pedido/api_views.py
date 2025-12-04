@@ -22,19 +22,15 @@ def crear_pedido_api(request):
     - bodega_seleccionada: ID de la bodega a la que se le remite el pedido
     - cliente: ID del cliente relacionado con el pedido
     - operario: login del operario al que se le asigna el pedido
-    - items: lista de los SKU de los items del pedido
-    - productos_solicitados: lista en formato json donde cada elemento tiene el id del producto y la cantidad pedida
+    - productos_solicitados: lista en formato json donde cada elemento tiene el código de barras del producto y la cantidad pedida
 
     Ejemplo de request:
     {
         "bodega_seleccionada": 1,
         "cliente": 1,
-        "operario": "Joao",
-        "items": [1,2,3],
+        "operario": "Diego4",
         "productos_solicitados": [
-            {"producto": 1, "cantidad": 2},
-            {"producto": 2, "cantidad": 3},
-            {"producto": 3, "cantidad": 4}
+            {"producto": 1234567890123, "cantidad": 1}
         ]
     }
     """
@@ -55,7 +51,7 @@ def cambiar_estado_pedido_api(request, id):
     - nuevo_estado: El estado al que se quiere cambiar el pedido
     - pedido_id: El id del pedido cuyo estado se quiere modificar
     - datos_factura: Esto es opcional, y debe aparecer unicamente si el estado al que se quiere cambiar el pedido es Empacado x despachar
-    Tiene información del metodo de pago, numero de cuenta y comprobante. Si el nuevo estado es diferente a Empacado x despachar, esta parte
+    Tiene información del costo total, metodo de pago, numero de cuenta y comprobante. Si el nuevo estado es diferente a Empacado x despachar, esta parte
     se puede omitir.
     
     Ejemplo de request:
@@ -66,6 +62,7 @@ def cambiar_estado_pedido_api(request, id):
         "pedido_id" : 1,
         "datos_factura": 
         {
+            "costo_total": 150000,
             "metodo_pago": "Tarjeta",
             "num_cuenta": "123456789", 
             "comprobante": "COMP-001"

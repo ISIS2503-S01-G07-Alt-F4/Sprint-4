@@ -11,7 +11,7 @@ router = APIRouter(
     dependencies=[Depends(validate_auth0_token)]
 )
 
-@router.get("/{item_sku}", status_code=status.HTTP_200_OK)
+@router.get("/sku/{item_sku}", status_code=status.HTTP_200_OK)
 async def obtener_item(item_sku: str, db=Depends(get_db)) -> Item:
     """
     Obtiene un item identificado por su SKU.
@@ -77,7 +77,7 @@ async def crear_item(item: Item, request: Request, db=Depends(get_db)) -> Dict[s
     
     return {"item_creado": resultado.acknowledged, "codigo": "EXITO", "id_item": str(resultado.inserted_id)}
 
-@router.put("/{item_sku}", status_code=status.HTTP_200_OK)
+@router.put("/sku/{item_sku}", status_code=status.HTTP_200_OK)
 async def actualizar_item(item_sku: str, item: Item, request: Request, db=Depends(get_db)) -> Dict[str, Any]:
     """
     Actualiza un item identificado por su SKU.
@@ -98,7 +98,7 @@ async def actualizar_item(item_sku: str, item: Item, request: Request, db=Depend
     
     return {"item_actualizado": resultado.acknowledged, "codigo": "EXITO"}
 
-@router.delete("/{item_sku}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/sku/{item_sku}", status_code=status.HTTP_204_NO_CONTENT)
 async def eliminar_item(item_sku: str, request: Request, db=Depends(get_db)):
     # Obtener el item antes de eliminarlo
     item = db.items.find_one({"_id": item_sku})

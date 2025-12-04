@@ -10,10 +10,7 @@ def crear_factura_para_pedido(pedido, datos_factura):
     """
     try:
         with transaction.atomic():
-            # Calcular costo total sumando los precios de todos los items
-            costo_total = 0
-            for item in pedido.items.all():
-                costo_total += float(item.producto.precio)
+            costo_total = float(datos_factura.get('costo_total', 0))
             
             # Crear la factura
             factura = Factura.objects.create(

@@ -1,4 +1,8 @@
-from Pedido.logic.logic_inventario import get_item, get_bodega
+from Pedido.logic.logic_inventario import (
+    get_bodega,
+    get_items_disponibles_por_producto,
+    get_producto,
+)
 from Pedido.logic.logic_factura import crear_factura_para_pedido
 from Pedido.logic.logic_usuario import verificar_permiso_rol, obtener_operario
 from Pedido.logic.logic_auditoria import enviar_evento_auditoria
@@ -74,7 +78,7 @@ def crear_pedido_logica(pedido_data, user_data):
     Lógica principal para crear un producto usando los serializers
     """
     try:
-        # Crear el serializer con el usuario para validaciones
+        # Crear el serializer con el usuario para validacionesp
         print(f"Datos recibidos para crear pedido: {pedido_data}")
         serializer = PedidoCreateSerializer(data=pedido_data)
         print("Puede crear el serializer")
@@ -88,7 +92,7 @@ def crear_pedido_logica(pedido_data, user_data):
                 entity="PEDIDO",
                 entity_id=pedido.id,
                 description=f"Pedido creado por {user_data.get('username','usuario')}",
-                metadata={"estado": pedido.estado, "items": list(pedido.items.values_list('sku', flat=True))}
+                metadata={"estado": pedido.estado, "items": list(pedido.items or [])}
             )
             # Serializar la respuesta con información completa
             response_serializer = PedidoSerializer(pedido)
@@ -102,121 +106,86 @@ def crear_pedido_logica(pedido_data, user_data):
 
 
 def validar_datos_pedido(request_data, inv_headers=None):
-    """
-    Valida que todos los campos requeridos estén presentes
-    """
-   
+    """Valida que los datos del pedido sean consistentes usando el microservicio de inventario."""
+
     bodega_seleccionada_id = request_data.get('bodega_seleccionada')
-    items_ids = request_data.get('items', [])
-    
-    skus_unicos = set()
-    skus_repetidos = set()
-    
-    for sku in items_ids:
-        if sku in skus_unicos:
-            skus_repetidos.add(sku)
-        else:
-            skus_unicos.add(sku)
-    
-    if skus_repetidos:
-        return None, [f"SKUs repetidos no permitidos: {', '.join(skus_repetidos)}"]
-    
+    items_ids = request_data.get('items') or []
+    productos_request = request_data.get('productos_solicitados')
+
+    campos_faltantes = []
+    if not request_data.get('cliente'):
+        campos_faltantes.append('cliente')
+    if not request_data.get('operario'):
+        campos_faltantes.append('operario')
+    if not bodega_seleccionada_id:
+        campos_faltantes.append('bodega_seleccionada')
+    if not productos_request:
+        campos_faltantes.append('productos_solicitados')
+
+    if campos_faltantes:
+        return None, campos_faltantes
+
+    if not isinstance(productos_request, list):
+        return None, ["'productos_solicitados' debe ser una lista"]
+
     productos_solicitados_data = []
-    for ps in request_data.get('productos_solicitados', []):
+    for idx, ps in enumerate(productos_request):
+        producto_codigo = str(ps.get('producto', '')).strip()
+        if not producto_codigo:
+            return None, [f"El campo 'producto' es requerido en la posición {idx}"]
+
+        try:
+            cantidad = int(ps.get('cantidad', 0))
+        except (TypeError, ValueError):
+            return None, [f"La cantidad del producto {producto_codigo} debe ser numérica"]
+
+        if cantidad <= 0:
+            return None, [f"La cantidad del producto {producto_codigo} debe ser mayor a cero"]
+
         productos_solicitados_data.append({
-            'producto': ps['producto'],  # ← código de barras (string)
-            'cantidad': int(ps['cantidad'])  # ← cantidad sigue siendo int
+            'producto': producto_codigo,
+            'cantidad': cantidad
         })
+
     pedido_data = {
         'cliente': request_data.get('cliente'),
         'items': items_ids,
         'operario': request_data.get('operario'),
         'productos_solicitados': productos_solicitados_data,
-        'bodega_seleccionada': bodega_seleccionada_id
+        'bodega_id': str(bodega_seleccionada_id).strip(),
     }
-    if items_ids and productos_solicitados_data:
-        # 1. Verificar misma cantidad
-        if len(items_ids) != len(productos_solicitados_data):
-            return None, [f"La cantidad de items ({len(items_ids)}) no coincide con la cantidad de productos solicitados ({len(productos_solicitados_data)})"]
-        
-        # 2. Obtener los productos de los items
-        try:
-            items_productos = {}
-            skus_no_encontrados = []
-            
-            for sku in items_ids:
-                item_data = get_item(sku, headers=inv_headers)
-                if item_data:
-                    items_productos[sku] = item_data['producto_id']
-                else:
-                    skus_no_encontrados.append(sku)
-            
-            # 3. Verificar que todos los SKUs existen
-            if skus_no_encontrados:
-                return None, [f"No hay stock disponible para los siguientes SKUs: {', '.join(skus_no_encontrados)}"]
-            
-            # 4. Verificar coincidencia de productos
-            productos_no_coincidentes = []
-            for i, item_sku in enumerate(items_ids):
-                producto_solicitado_codigo = str(productos_solicitados_data[i]['producto']).strip()
-                producto_item_codigo = str(items_productos[item_sku]).strip()
-                
-                if producto_item_codigo != producto_solicitado_codigo:
-                    productos_no_coincidentes.append({
-                        'item_sku': item_sku,
-                        'producto_item': producto_item_codigo,
-                        'producto_solicitado': producto_solicitado_codigo
-                    })
-            
-            if productos_no_coincidentes:
-                error_msg = "Los productos de los items no coinciden con los productos solicitados:"
-                for error in productos_no_coincidentes:
-                    error_msg += f"\n- Item SKU {error['item_sku']} tiene producto {error['producto_item']} pero se solicitó {error['producto_solicitado']}"
-                return None, [error_msg]
-                
-        except Exception as e:
-            return None, [f"Error validando coincidencia de productos: {str(e)}"]
-    # Validar que los items estén en la bodega seleccionada
-    if bodega_seleccionada_id and items_ids:
-        try:
-            bodega_data = get_bodega(bodega_seleccionada_id, headers=inv_headers)
-            if not bodega_data:
-                 return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
-            
-            # Verificar cada item
-            items_fuera_de_bodega = []
-            for item_id in items_ids:
-                item_data = get_item(item_id, headers=inv_headers)
-                if not item_data:
-                     return None, [f"Item con SKU {item_id} no existe"]
-                
-                if str(item_data.get('bodega_id')).strip() != str(bodega_seleccionada_id).strip():
-                        actual_bodega = get_bodega(item_data.get('bodega_id'), headers=inv_headers)
-                        actual_bodega_name = actual_bodega.get('ciudad', 'Desconocida') if actual_bodega else 'Desconocida'
-                        
-                        items_fuera_de_bodega.append({
-                            'item_id': item_id,
-                            'producto': item_data.get('producto_id'),
-                            'bodega_actual': actual_bodega_name
-                        })
-            
-            if items_fuera_de_bodega:
-                error_msg = "Algunos items no pertenecen a la bodega seleccionada:"
-                for item_error in items_fuera_de_bodega:
-                    error_msg += f"\n- Item {item_error['item_id']} ({item_error['producto']}) está en {item_error['bodega_actual']}"
-                return None, [error_msg]
-                
-        except Exception as e:
-            return None, [f"Error validando bodega: {str(e)}"]
-    
-    campos_requeridos = ['cliente', 'items','operario','productos_solicitados', 'bodega_seleccionada']  
-    campos_faltantes = []
-    
-    for campo in campos_requeridos:
-        if not pedido_data.get(campo):
-            campos_faltantes.append(campo)    
-            
-    return pedido_data, campos_faltantes
+
+    # Validar bodega
+    bodega_data = get_bodega(bodega_seleccionada_id, headers=inv_headers)
+    if not bodega_data:
+        return None, [f"Bodega con ID {bodega_seleccionada_id} no existe"]
+
+    # Validar productos y disponibilidad
+    for producto in productos_solicitados_data:
+        producto_codigo = producto['producto']
+        producto_data = get_producto(producto_codigo, headers=inv_headers)
+        if not producto_data:
+            return None, [f"Producto con código {producto_codigo} no existe"]
+
+        inventario_items = get_items_disponibles_por_producto(
+            producto_codigo,
+            bodega_seleccionada_id,
+            headers=inv_headers
+        )
+
+        if inventario_items is None:
+            return None, [
+                f"No fue posible validar la disponibilidad del producto {producto_codigo} en la bodega {bodega_seleccionada_id}"
+            ]
+
+        disponibles = len(inventario_items)
+        if disponibles < producto['cantidad']:
+            return None, [
+                f"No hay suficientes items disponibles del producto {producto_codigo} en la bodega {bodega_seleccionada_id}. "
+                f"Solicitado {producto['cantidad']}, disponibles {disponibles}"
+            ]
+
+    return pedido_data, []
 
 
 def actualizar_estado_pedido(pedido_id, nuevo_estado):
@@ -291,7 +260,7 @@ def actualizar_estado_pedido_api(request):
                 }, status=status.HTTP_400_BAD_REQUEST)
             pedido = Pedido.objects.get(id=pedido_id)
             # Validar campos requeridos de la factura
-            campos_factura_requeridos = [ 'metodo_pago', 'num_cuenta', 'comprobante']
+            campos_factura_requeridos = ['costo_total', 'metodo_pago', 'num_cuenta', 'comprobante']
             campos_faltantes = [campo for campo in campos_factura_requeridos if not datos_factura.get(campo)]
             
             
