@@ -1,5 +1,6 @@
 from Pedido.logic.logic_inventario import get_item, get_bodega
 from Pedido.logic.logic_factura import crear_factura_para_pedido
+from Pedido.logic.logic_usuario import verificar_permiso_rol, obtener_operario
 from Pedido.models import Pedido
 from Pedido.serializers import PedidoCreateSerializer, PedidoSerializer
 from rest_framework import status
@@ -23,10 +24,19 @@ def registrar_pedido(data: dict) -> Pedido:
 def procesar_creacion_pedido_completa(request):
     """
     Procesa la creación completa de un pedido desde la API
-    Coherente con el sistema de autenticación usado en las vistas web
+    Requiere autenticación vía token y permisos de JefeBodega
     """
     try:
         request_data = request.data
+        user_data = getattr(request, 'user_data', None)
+        
+        # Verificar permisos (JefeBodega puede crear pedidos)
+        tiene_permisos, mensaje = verificar_permiso_rol(user_data, ['JefeBodega'])
+        if not tiene_permisos:
+            return Response({
+                'error': mensaje,
+                'codigo': 'INSUFFICIENT_PERMISSIONS'
+            }, status=status.HTTP_403_FORBIDDEN)
         
         #Validar datos del producto
         pedido_data, campos_faltantes = validar_datos_pedido(request_data)
@@ -225,9 +235,11 @@ def actualizar_estado_pedido(pedido_id, nuevo_estado):
 def actualizar_estado_pedido_api(request):
     """
     Endpoint para actualizar estado desde API
+    Requiere autenticación y permisos según el estado destino
     """
     try:
         request_data = request.data
+        user_data = getattr(request, 'user_data', None)
         
         
         # Obtener datos
@@ -243,6 +255,14 @@ def actualizar_estado_pedido_api(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         if nuevo_estado == "Empacado x despachar":            
+            # Verificar permisos (Vendedor puede cambiar a Empacado x despachar)
+            tiene_permisos, mensaje = verificar_permiso_rol(user_data, ['Vendedor'])
+            if not tiene_permisos:
+                return Response({
+                    'error': mensaje,
+                    'codigo': 'INSUFFICIENT_PERMISSIONS'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
             if not datos_factura:
                 return Response({
                     'error': 'Se requieren datos_factura cuando el nuevo estado es "Empacado x despachar"',
@@ -271,7 +291,13 @@ def actualizar_estado_pedido_api(request):
             pedido.factura = factura
             pedido.save()
 
-
+        # Verificar permisos para otros cambios de estado
+        tiene_permisos, mensaje = verificar_permiso_rol(user_data, ['JefeBodega', 'Operario', 'Vendedor'])
+        if not tiene_permisos:
+            return Response({
+                'error': mensaje,
+                'codigo': 'INSUFFICIENT_PERMISSIONS'
+            }, status=status.HTTP_403_FORBIDDEN)
         
         # Actualizar
         pedido, error = actualizar_estado_pedido(pedido_id, nuevo_estado)
@@ -316,8 +342,18 @@ def verificar_integridad_pedido(request_data):
         print("entro al else")
         return False
     
-def consultar_pedido_por_id(id_pedido):
+def consultar_pedido_por_id(request, id_pedido):
     try:
+        user_data = getattr(request, 'user_data', None)
+        
+        # Verificar permisos (JefeBodega puede consultar)
+        tiene_permisos, mensaje = verificar_permiso_rol(user_data, ['JefeBodega'])
+        if not tiene_permisos:
+            return Response({
+                'mensaje': mensaje,
+                'codigo': 'INSUFFICIENT_PERMISSIONS'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         pedido = Pedido.objects.get(id=id_pedido)
 
         if pedido:

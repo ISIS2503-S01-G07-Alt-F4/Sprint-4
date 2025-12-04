@@ -167,7 +167,7 @@ CACHES = {
 # Django REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # Microservicio sin acoplar a Users: sólo JSON sin auth de Django
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
@@ -184,3 +184,7 @@ REST_FRAMEWORK = {
 API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL', 'http://kong:8000')
 INVENTARIO_SERVICE_PATH = os.environ.get('INVENTARIO_SERVICE_PATH', '/inventario')
 INVENTARIO_URL = f"{API_GATEWAY_URL}{INVENTARIO_SERVICE_PATH}"
+
+# Microservicio de Usuarios (futuro, vía Kong)
+USERS_SERVICE_PATH = os.environ.get('USERS_SERVICE_PATH', '/usuarios')
+USERS_SERVICE_URL = f"{API_GATEWAY_URL}{USERS_SERVICE_PATH}"

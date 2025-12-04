@@ -1,4 +1,5 @@
 from Pedido.logic.logic_pedido import actualizar_estado_pedido_api, consultar_pedido_por_id, procesar_creacion_pedido_completa, verificar_integridad_pedido
+from Pedido.logic.logic_usuario import token_requerido
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -6,7 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 @api_view(['POST'])
-@permission_classes([AllowAny]) 
+@permission_classes([AllowAny])
+@token_requerido
 def crear_pedido_api(request):
     """
     Endpoint para crear un nuevo pedido
@@ -53,7 +55,8 @@ def crear_pedido_api(request):
 
 @csrf_exempt
 @api_view(['PUT'])
-@permission_classes([AllowAny]) 
+@permission_classes([AllowAny])
+@token_requerido
 def cambiar_estado_pedido_api(request, id):
     """
     Endpoint para crear un nuevo pedido
@@ -98,5 +101,6 @@ def verificar_integridad(request, id):
 
 
 @api_view(['GET'])
+@token_requerido
 def consultar_pedido(request, id):
-    return consultar_pedido_por_id(id)
+    return consultar_pedido_por_id(request, id)
