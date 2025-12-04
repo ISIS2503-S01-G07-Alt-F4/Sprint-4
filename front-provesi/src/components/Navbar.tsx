@@ -33,6 +33,9 @@ const Navbar: React.FC = () => {
                     <Link to="/items" className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${isActive('/items')}`}>
                         Items
                     </Link>
+                    <Link to="/pedidos" className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${isActive('/pedidos')}`}>
+                        Pedidos
+                    </Link>
                 </div>
             </div>
             <div className="flex items-center">

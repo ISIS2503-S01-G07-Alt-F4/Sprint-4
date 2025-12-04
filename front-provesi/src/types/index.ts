@@ -32,3 +32,34 @@ export interface Bodega {
     direccion: string;
     estanterias: Estanteria[];
 }
+
+export interface Cliente {
+    id: number;
+    nombre: string;
+    numero_telefono: string;
+}
+
+export interface Factura {
+    id?: number;
+    costo_total: number;
+    metodo_pago: string;
+    num_cuenta: string;
+    comprobante: string;
+    cliente?: number;
+}
+
+export interface ProductoSolicitado {
+    producto: string; // ID del producto
+    cantidad: number;
+}
+
+export interface Pedido {
+    id?: number;
+    estado: string;
+    items?: string[]; // SKUs de items
+    factura?: Factura;
+    cliente?: number;
+    operario: string;
+    hash_de_integridad?: string;
+    productos_solicitados?: ProductoSolicitado[];
+}
